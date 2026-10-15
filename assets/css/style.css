@@ -1,0 +1,115 @@
+:root {
+  --chamaja-ink: #142a2e;
+  --chamaja-muted: #66787b;
+  --chamaja-primary: #087e78;
+  --chamaja-accent: #ef9b45;
+  --chamaja-paper: #f5f8f6;
+}
+
+body {
+  color: var(--chamaja-ink);
+  background: var(--chamaja-paper);
+}
+
+.hero {
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 88% 8%, rgba(239, 155, 69, 0.14), transparent 34rem),
+    linear-gradient(135deg, #f8faf8 0%, #edf5f2 58%, #f8f5ed 100%);
+}
+
+.brand-logo {
+  color: var(--chamaja-ink);
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.brand-mark,
+.service-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 3rem;
+  aspect-ratio: 1;
+  border-radius: 0.9rem;
+  color: #fff;
+  background: var(--chamaja-primary);
+  font-size: 1.25rem;
+}
+
+.hero-title {
+  max-width: 12ch;
+  font-size: clamp(2.75rem, 5vw, 4.75rem);
+  font-weight: 800;
+  line-height: 1.04;
+}
+
+.gradient-text {
+  color: var(--chamaja-primary);
+}
+
+.hero .lead,
+.action-card p {
+  color: var(--chamaja-muted) !important;
+}
+
+.hero .btn-primary {
+  border-color: var(--chamaja-primary);
+  background: var(--chamaja-primary);
+}
+
+.hero .btn-primary:hover {
+  border-color: #06635f;
+  background: #06635f;
+}
+
+.glass-card,
+.card-soft {
+  border: 1px solid rgba(20, 42, 46, 0.09);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 1.25rem 3rem rgba(20, 42, 46, 0.08);
+}
+
+.glass-card {
+  backdrop-filter: blur(12px);
+}
+
+.action-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.action-card:hover {
+  color: inherit;
+  transform: translateY(-4px);
+  box-shadow: 0 1.5rem 3rem rgba(20, 42, 46, 0.12);
+}
+
+.service-icon {
+  color: var(--chamaja-primary);
+  background: rgba(8, 126, 120, 0.11);
+}
+
+@media (max-width: 575.98px) {
+  .hero-title {
+    font-size: 2.75rem;
+  }
+
+  .glass-card {
+    padding: 1.25rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
