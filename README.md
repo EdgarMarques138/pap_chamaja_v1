@@ -23,7 +23,7 @@ Esta modalidade é apenas local: não tem login nem sincroniza dados com outros 
     };
     ```
 
-4. Em **Authentication → Users**, cria os utilizadores do back office. Para cada utilizador, copia o UUID e cria um perfil na tabela `profiles`:
+4. Em **Authentication → Users**, cria os utilizadores do atendimento. Para cada utilizador, copia o UUID e cria um perfil na tabela `profiles`:
 
     ```sql
     insert into public.profiles (id, full_name, role, service_id, counter_id)
@@ -36,8 +36,8 @@ Esta modalidade é apenas local: não tem login nem sincroniza dados com outros 
     );
     ```
 
-    Use `role = 'admin'` para um administrador. Os IDs dos balcões 1–4 terminam em `011`–`014`; os IDs dos serviços estão definidos no schema. Um administrador também precisa de um balcão para chamar senhas.
-5. Publica as alterações no GitHub Pages. A emissão pública e o painel usam o backend; o back office exige sessão. A gestão de contas e perfis é feita no painel do Supabase.
+   Usa `role = 'attendant'`. Só perfis ativos de funcionários com serviço e balcão atribuídos podem entrar no atendimento e chamar senhas. Os IDs dos balcões 1–4 terminam em `011`–`014`; os IDs dos serviços estão definidos no schema.
+5. Publica as alterações no GitHub Pages. A emissão pública e o painel usam o backend; o atendimento exige sessão. A gestão de contas e perfis é feita no painel do Supabase.
 
 No frontend usa-se apenas a chave pública `anon`/publishable. **Nunca coloques a chave `service_role` no site.** Os dados locais existentes não são migrados automaticamente para o Supabase.
 
@@ -64,7 +64,7 @@ No frontend usa-se apenas a chave pública `anon`/publishable. **Nunca coloques 
 8. Abre no navegador:
    - `http://localhost/chamaja/`
 
-## Credenciais de teste
+## Credenciais da versão PHP antiga
 
 ### Administrador
 - Email: `admin@chamaja.pt`
@@ -80,7 +80,7 @@ No frontend usa-se apenas a chave pública `anon`/publishable. **Nunca coloques 
 
 > Estas credenciais existem apenas para ambiente de desenvolvimento. Numa utilização real, altera imediatamente as palavras-passe.
 
-## Fluxo de teste recomendado
+## Fluxo da versão PHP antiga
 
 1. Na página inicial, abre **Retirar Senha**.
 2. Escolhe um serviço e gera uma senha.

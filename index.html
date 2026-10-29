@@ -14,7 +14,7 @@
       <button class="nav-button active" type="button" data-view="home" aria-pressed="true">Início</button>
       <button class="nav-button" type="button" data-view="emit" aria-pressed="false">Retirar senha</button>
       <button class="nav-button" type="button" data-view="panel" aria-pressed="false">Painel</button>
-      <button class="nav-button" type="button" data-view="staff" aria-pressed="false">Back office</button>
+      <button class="nav-button" type="button" data-view="staff" aria-pressed="false">Atendimento</button>
     </nav>
   </header>
 
@@ -83,8 +83,8 @@
     <section class="view" id="view-login" hidden>
       <div class="section-heading">
         <p class="eyebrow">Acesso reservado</p>
-        <h2>Back office</h2>
-        <p>Inicia sessão com a conta de funcionário criada no Supabase.</p>
+        <h2>Atendimento de Funcionários</h2>
+        <p>Área privada para funcionários autorizados.</p>
       </div>
       <form class="staff-login" id="login-form">
         <label for="login-email">Email</label>
@@ -98,8 +98,8 @@
 
     <section class="view" id="view-staff" hidden>
       <div class="section-heading">
-        <p class="eyebrow">Back office</p>
-        <div class="staff-heading-row"><h2 id="staff-title">Atendimento</h2><button class="button button-outline" id="logout" type="button" hidden>Terminar sessão</button></div>
+        <p class="eyebrow">Atendimento privado</p>
+        <div class="staff-heading-row"><h2>Atendimento</h2><button class="button button-outline" id="logout" type="button" hidden>Terminar sessão</button></div>
         <p id="staff-description">Controlos locais de atendimento.</p>
       </div>
       <div class="staff-layout">
@@ -284,9 +284,8 @@
       setText('staff-service', staffActive ? `${staffActive.serviceName} · ${staffActive.counterName}` : '');
       setText('staff-status', staffActive ? (staffActive.state === 'serving' ? 'Atendimento em curso.' : 'Aguarda início do atendimento.') : 'Não há atendimento em curso.');
       setText('action-message', actionMessage);
-      setText('staff-title', staffProfile?.full_name || 'Atendimento');
       setText('staff-description', backendEnabled
-        ? `${staffProfile?.role === 'admin' ? 'Administrador' : 'Funcionário'} · ${staffProfile?.counter_name || 'Balcão por atribuir'}`
+        ? `${staffProfile?.full_name || 'Funcionário'} · ${staffProfile?.counter_name || 'Balcão por atribuir'}`
         : 'Modo local: estas ações só alteram a fila guardada neste navegador.');
       document.getElementById('logout').hidden = !backendEnabled || !staffProfile;
       document.getElementById('clear-queue').hidden = backendEnabled;
@@ -473,7 +472,7 @@
       event.preventDefault();
       const message = document.getElementById('login-message');
       if (!backendEnabled) {
-        message.textContent = 'O back office está bloqueado até o Supabase ser configurado.';
+        message.textContent = 'O atendimento está bloqueado até o Supabase ser configurado.';
         return;
       }
       message.textContent = 'A validar acesso…';
@@ -487,8 +486,8 @@
         const authResult = await authResponse.json();
         if (!authResponse.ok) throw new Error(authResult.msg || authResult.message || 'Email ou palavra-passe inválidos.');
         accessToken = authResult.access_token;
-        const profiles = await backendRequest(`/rest/v1/profiles?select=id,full_name,role,service_id,counter_id,active,counters(name)&id=eq.${encodeURIComponent(authResult.user.id)}&active=eq.true`);
-        if (!profiles.length) throw new Error('Esta conta não tem um perfil de funcionário ativo.');
+        const profiles = await backendRequest(`/rest/v1/profiles?select=id,full_name,role,service_id,counter_id,active,counters(name)&id=eq.${encodeURIComponent(authResult.user.id)}&active=eq.true&role=eq.attendant`);
+        if (!profiles.length) throw new Error('Esta conta não está autorizada como funcionário ativo.');
         staffProfile = profiles[0];
         const counter = Array.isArray(staffProfile.counters) ? staffProfile.counters[0] : staffProfile.counters;
         staffProfile.counter_name = counter?.name || 'Balcão por atribuir';
