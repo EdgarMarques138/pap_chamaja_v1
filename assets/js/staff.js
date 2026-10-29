@@ -44,13 +44,13 @@
   function render() {
     if (!profile) return;
     const active = currentTicket();
-    const waiting = tickets.filter(ticket => ticket.state === 'waiting').length;
+    const waiting = tickets.filter(ticket => ticket.state === 'waiting' && ticket.service_id === profile.service_id).length;
     setText('staff-name', profile.full_name);
     setText('staff-assignment', `${profile.service_name} · ${profile.counter_name}`);
     setText('current-ticket', active?.number || '---');
     setText('current-service', active?.service_name || 'Não há atendimento em curso.');
     setText('current-status', active ? (active.state === 'serving' ? 'Atendimento em curso.' : 'Aguarda início do atendimento.') : '');
-    setText('queue-count', `${waiting} ${waiting === 1 ? 'senha em espera' : 'senhas em espera'} no sistema`);
+    setText('queue-count', `${waiting} ${waiting === 1 ? 'senha em espera' : 'senhas em espera'} em ${profile.service_name}`);
 
     element('call-next').disabled = Boolean(active) || waiting === 0;
     element('start-service').disabled = !active || active.state !== 'called';
@@ -120,7 +120,10 @@
       ...ticket,
       service_name: Array.isArray(ticket.services) ? ticket.services[0]?.name : ticket.services?.name,
       counter_name: Array.isArray(ticket.counters) ? ticket.counters[0]?.name : ticket.counters?.name
-    }));
+    })).filter(ticket => (
+      (ticket.state === 'waiting' && ticket.service_id === profile.service_id)
+      || ticket.counter_id === profile.counter_id
+    ));
     render();
   }
 

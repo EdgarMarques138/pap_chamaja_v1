@@ -40,7 +40,7 @@
       <section class="admin-section">
         <h2>Áreas</h2>
         <form class="admin-form admin-area-form" id="area-form">
-          <div class="form-field">
+          <div class="form-field area-name-field">
             <label for="area-name">Nome da área</label>
             <input id="area-name" name="name" maxlength="80" placeholder="Ex.: Recursos Humanos" required>
           </div>
@@ -48,7 +48,7 @@
             <label for="area-prefix">Prefixo</label>
             <input id="area-prefix" name="prefix" maxlength="4" pattern="[A-Za-z0-9]{1,4}" placeholder="Ex.: RH" required>
           </div>
-          <div class="form-field">
+          <div class="form-field area-description-field">
             <label for="area-description">Descrição</label>
             <input id="area-description" name="description" maxlength="240" placeholder="Contratos e assuntos de pessoal">
           </div>
@@ -76,16 +76,26 @@
       <section class="admin-section">
         <h2>Funcionários</h2>
         <form class="admin-form admin-employee-form" id="employee-form">
-          <label for="employee-name">Nome</label>
-          <input id="employee-name" name="full_name" maxlength="120" required>
-          <label for="employee-email">Email de acesso</label>
-          <input id="employee-email" name="email" type="email" autocomplete="off" required>
-          <label for="employee-password">Palavra-passe inicial</label>
-          <input id="employee-password" name="password" type="password" minlength="8" autocomplete="new-password" required>
-          <label for="employee-counter">Balcão e área</label>
-          <select id="employee-counter" name="counter_id" required></select>
-          <button class="button button-primary" id="employee-submit" type="submit">Adicionar funcionário</button>
-          <p class="action-message" id="employee-message" aria-live="polite"></p>
+          <div class="form-field">
+            <label for="employee-name">Nome</label>
+            <input id="employee-name" name="full_name" maxlength="120" required>
+          </div>
+          <div class="form-field">
+            <label for="employee-email">Email de acesso</label>
+            <input id="employee-email" name="email" type="email" autocomplete="off" required>
+          </div>
+          <div class="form-field">
+            <label for="employee-password">Palavra-passe inicial</label>
+            <input id="employee-password" name="password" type="password" minlength="8" autocomplete="new-password" required>
+          </div>
+          <div class="form-field">
+            <label for="employee-counter">Balcão e área</label>
+            <select id="employee-counter" name="counter_id" required></select>
+          </div>
+          <div class="form-actions">
+            <button class="button button-primary" id="employee-submit" type="submit">Adicionar funcionário</button>
+            <p class="action-message" id="employee-message" aria-live="polite"></p>
+          </div>
         </form>
         <div class="admin-list" id="employee-list" aria-live="polite"></div>
       </section>

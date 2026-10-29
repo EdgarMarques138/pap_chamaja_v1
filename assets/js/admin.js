@@ -335,8 +335,16 @@
         })
       });
       const signup = await signupResponse.json();
+      const signupError = signup.error_description || signup.msg || signup.message || signup.error || signup.error_code || '';
+      const emailAlreadyUsed = ['email_exists', 'user_already_exists'].includes(signup.code)
+        || ['email_exists', 'user_already_exists'].includes(signup.error_code)
+        || /already (registered|exists)|já está registad/i.test(signupError)
+        || (Array.isArray(signup.user?.identities) && signup.user.identities.length === 0);
+      if (emailAlreadyUsed) {
+        throw new Error('Este email já está registado. Usa um endereço diferente do administrador e dos restantes utilizadores.');
+      }
       if (!signupResponse.ok || !signup.user?.id) {
-        throw new Error(signup.msg || signup.message || 'Não foi possível criar a conta.');
+        throw new Error(signupError || 'Não foi possível criar a conta. Verifica as definições de registo por email no Supabase.');
       }
       const selectedCounter = counters.find(counter => counter.id === fields.counter_id);
       await request('/rest/v1/profiles', {
