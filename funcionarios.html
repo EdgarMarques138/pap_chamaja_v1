@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f3eb">
+  <title>ChamaJá | Funcionários</title>
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">CJ</span><span>ChamaJá</span></a>
+    <a class="nav-button" href="index.html">Voltar ao site</a>
+  </header>
+
+  <main class="page-shell">
+    <section id="login-view">
+      <div class="section-heading">
+        <p class="eyebrow">Acesso privado</p>
+        <h1 class="portal-title">Área de funcionários</h1>
+        <p>Inicia sessão para aceder ao atendimento do teu balcão.</p>
+      </div>
+      <form class="staff-login" id="login-form">
+        <label for="login-email">Email</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" required>
+        <label for="login-password">Palavra-passe</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="button button-primary" id="login-submit" type="submit">Entrar</button>
+        <p class="action-message" id="login-message" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="staff-view" hidden>
+      <div class="section-heading">
+        <p class="eyebrow">Atendimento privado</p>
+        <div class="staff-heading-row"><h1 class="portal-title" id="staff-name">Atendimento</h1><button class="button button-outline" id="logout" type="button">Terminar sessão</button></div>
+        <p id="staff-assignment"></p>
+      </div>
+      <div class="staff-layout">
+        <section class="staff-current" aria-live="polite">
+          <span class="eyebrow">Senha em curso</span>
+          <strong class="panel-number" id="current-ticket">---</strong>
+          <span id="current-service">Não há atendimento em curso.</span>
+          <span class="panel-counter" id="current-status"></span>
+        </section>
+        <section class="staff-actions" aria-label="Ações de atendimento">
+          <p class="queue-count" id="queue-count">A carregar fila…</p>
+          <button class="button button-primary" id="call-next" type="button">Chamar próxima</button>
+          <button class="button button-outline" id="start-service" type="button">Iniciar atendimento</button>
+          <button class="button button-outline" id="finish-service" type="button">Concluir</button>
+          <button class="button button-danger" id="mark-absent" type="button">Marcar ausência</button>
+          <p class="action-message" id="action-message" aria-live="polite"></p>
+        </section>
+      </div>
+      <section class="recent-list staff-recent">
+        <h2>Últimas chamadas</h2>
+        <div id="recent-tickets" class="recent-items"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="page-footer">ChamaJá <span>·</span> portal privado de funcionários</footer>
+
+  <script src="assets/js/backend-config.js"></script>
+  <script src="assets/js/staff.js"></script>
+</body>
+</html>

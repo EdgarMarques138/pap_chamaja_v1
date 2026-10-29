@@ -14,7 +14,7 @@
       <button class="nav-button active" type="button" data-view="home" aria-pressed="true">Início</button>
       <button class="nav-button" type="button" data-view="emit" aria-pressed="false">Retirar senha</button>
       <button class="nav-button" type="button" data-view="panel" aria-pressed="false">Painel</button>
-      <button class="nav-button" type="button" data-view="staff" aria-pressed="false">Atendimento</button>
+      <a class="nav-button" href="funcionarios.html">Funcionários</a>
     </nav>
   </header>
 
@@ -24,7 +24,7 @@
         <div class="home-copy">
           <p class="eyebrow">Gestão de filas</p>
           <h1>A sua vez,<br><span>sem complicações.</span></h1>
-          <p class="intro">Escolha um serviço, acompanhe a fila e chame a próxima senha a partir deste navegador.</p>
+          <p class="intro">Escolha um serviço, retire a sua senha e acompanhe as chamadas em tempo real.</p>
           <div class="home-actions">
             <button class="button button-primary" type="button" data-view="emit">Retirar senha</button>
             <button class="button button-outline" type="button" data-view="panel">Abrir painel</button>
@@ -80,45 +80,6 @@
       </div>
     </section>
 
-    <section class="view" id="view-login" hidden>
-      <div class="section-heading">
-        <p class="eyebrow">Acesso reservado</p>
-        <h2>Atendimento de Funcionários</h2>
-        <p>Área privada para funcionários autorizados.</p>
-      </div>
-      <form class="staff-login" id="login-form">
-        <label for="login-email">Email</label>
-        <input id="login-email" name="email" type="email" autocomplete="username" required>
-        <label for="login-password">Palavra-passe</label>
-        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
-        <button class="button button-primary" type="submit">Entrar</button>
-        <p class="action-message" id="login-message" aria-live="polite"></p>
-      </form>
-    </section>
-
-    <section class="view" id="view-staff" hidden>
-      <div class="section-heading">
-        <p class="eyebrow">Atendimento privado</p>
-        <div class="staff-heading-row"><h2>Atendimento</h2><button class="button button-outline" id="logout" type="button" hidden>Terminar sessão</button></div>
-        <p id="staff-description">Controlos locais de atendimento.</p>
-      </div>
-      <div class="staff-layout">
-        <section class="staff-current" aria-live="polite">
-          <span class="eyebrow">Senha em curso</span>
-          <strong class="panel-number" id="staff-current">---</strong>
-          <span id="staff-status">Não há atendimento em curso.</span>
-          <span class="panel-counter" id="staff-service"></span>
-        </section>
-        <section class="staff-actions" aria-label="Ações de atendimento">
-          <button class="button button-primary" id="call-next" type="button">Chamar próxima</button>
-          <button class="button button-outline" id="start-service" type="button">Iniciar atendimento</button>
-          <button class="button button-outline" id="finish-service" type="button">Concluir</button>
-          <button class="button button-danger" id="mark-absent" type="button">Marcar ausência</button>
-          <p class="action-message" id="action-message" aria-live="polite"></p>
-          <button class="text-button" id="clear-queue" type="button">Limpar fila deste navegador</button>
-        </section>
-      </div>
-    </section>
   </main>
 
   <footer class="page-footer">ChamaJá <span>·</span> <span id="footer-mode">modo local</span></footer>
@@ -138,9 +99,7 @@
     const backendEnabled = Boolean(backendUrl && backendKey);
     let memoryData = { tickets: [] };
     let lastIssued = null;
-    let actionMessage = '';
     let accessToken = '';
-    let staffProfile = null;
 
     function apiHeaders(token = accessToken) {
       return {
@@ -229,14 +188,6 @@
         .sort((a, b) => b.calledAt - a.calledAt)[0] || null;
     }
 
-    function staffActiveTicket() {
-      const active = data.tickets.filter(ticket => ticket.state === 'called' || ticket.state === 'serving');
-      if (backendEnabled && staffProfile?.counter_id) {
-        return active.find(ticket => ticket.counterId === staffProfile.counter_id) || null;
-      }
-      return active.sort((a, b) => b.calledAt - a.calledAt)[0] || null;
-    }
-
     function setText(id, value) {
       document.getElementById(id).textContent = value;
     }
@@ -263,7 +214,6 @@
 
     function render() {
       const active = activeTicket();
-      const staffActive = staffActiveTicket();
       const waiting = data.tickets.filter(ticket => ticket.state === 'waiting').length;
       const serving = data.tickets.filter(ticket => ticket.state === 'serving').length;
       const today = new Date().toDateString();
@@ -280,16 +230,6 @@
       setText('panel-current', active ? active.number : '---');
       setText('panel-service', active ? active.serviceName : 'A aguardar chamada');
       setText('panel-counter', active ? active.counterName : '—');
-      setText('staff-current', staffActive ? staffActive.number : '---');
-      setText('staff-service', staffActive ? `${staffActive.serviceName} · ${staffActive.counterName}` : '');
-      setText('staff-status', staffActive ? (staffActive.state === 'serving' ? 'Atendimento em curso.' : 'Aguarda início do atendimento.') : 'Não há atendimento em curso.');
-      setText('action-message', actionMessage);
-      setText('staff-description', backendEnabled
-        ? `${staffProfile?.full_name || 'Funcionário'} · ${staffProfile?.counter_name || 'Balcão por atribuir'}`
-        : 'Modo local: estas ações só alteram a fila guardada neste navegador.');
-      document.getElementById('logout').hidden = !backendEnabled || !staffProfile;
-      document.getElementById('clear-queue').hidden = backendEnabled;
-
       const recent = data.tickets.filter(ticket => ticket.calledAt).sort((a, b) => b.calledAt - a.calledAt).slice(0, 5);
       const recentList = document.getElementById('recent-tickets');
       recentList.replaceChildren();
@@ -311,38 +251,24 @@
         }
       }
 
-      document.getElementById('call-next').disabled = Boolean(staffActive) || waiting === 0;
-      document.getElementById('start-service').disabled = !staffActive || staffActive.state !== 'called';
-      document.getElementById('finish-service').disabled = !staffActive || staffActive.state !== 'serving';
-      document.getElementById('mark-absent').disabled = !staffActive;
       renderServices();
     }
 
     function showView(name) {
-      if (name === 'staff' && !staffProfile) name = 'login';
       for (const view of document.querySelectorAll('.view')) {
         view.hidden = view.id !== `view-${name}`;
       }
       for (const button of document.querySelectorAll('.nav-button')) {
-        const selected = button.dataset.view === (name === 'login' ? 'staff' : name);
+        const selected = button.dataset.view === name;
         button.classList.toggle('active', selected);
         button.setAttribute('aria-pressed', String(selected));
       }
       if (name === 'emit') {
         document.getElementById('ticket-result').hidden = !lastIssued;
       }
-      if (name === 'login' && !backendEnabled) {
-        setText('login-message', 'O atendimento é privado. Configura o Supabase para permitir o acesso de funcionários.');
-      }
     }
 
     document.addEventListener('click', async event => {
-      const privateActions = ['call-next', 'start-service', 'finish-service', 'mark-absent', 'clear-queue'];
-      if (privateActions.includes(event.target.id) && !staffProfile) {
-        showView('login');
-        return;
-      }
-
       const nav = event.target.closest('[data-view]');
       if (nav) {
         showView(nav.dataset.view);
@@ -384,7 +310,6 @@
         };
         data.tickets.push(ticket);
         lastIssued = ticket;
-        actionMessage = '';
         setText('ticket-number', ticket.number);
         const ahead = data.tickets.filter(item => item.serviceId === service.id && item.state === 'waiting' && item.createdAt < ticket.createdAt).length;
         setText('ticket-detail', `${service.name} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
@@ -393,122 +318,6 @@
         return;
       }
 
-      if (event.target.id === 'call-next') {
-        if (backendEnabled) {
-          try {
-            const result = await backendRpc('call_next_ticket');
-            const ticket = Array.isArray(result) ? result[0] : result;
-            actionMessage = ticket ? `Senha ${ticket.number} chamada para ${staffProfile.counter_name}.` : 'Não há senhas em espera para este balcão.';
-            await refreshRemoteData();
-          } catch (error) {
-            actionMessage = error.message;
-            render();
-          }
-          return;
-        }
-        if (activeTicket()) return;
-        const next = data.tickets.filter(ticket => ticket.state === 'waiting').sort((a, b) => a.createdAt - b.createdAt)[0];
-        if (next) {
-          next.state = 'called';
-          next.calledAt = Date.now();
-          next.updatedAt = next.calledAt;
-          actionMessage = `Senha ${next.number} chamada para o Balcão 1.`;
-          saveData();
-        }
-      }
-
-      if (event.target.id === 'start-service') {
-        const ticket = staffActiveTicket();
-        if (ticket) {
-          if (backendEnabled) {
-            try {
-              await backendRpc('advance_ticket', { p_ticket_id: ticket.id, p_action: 'start' });
-              actionMessage = `Atendimento da senha ${ticket.number} iniciado.`;
-              await refreshRemoteData();
-            } catch (error) {
-              actionMessage = error.message;
-              render();
-            }
-            return;
-          }
-          ticket.state = 'serving';
-          ticket.updatedAt = Date.now();
-          actionMessage = `Atendimento da senha ${ticket.number} iniciado.`;
-          saveData();
-        }
-      }
-
-      if (event.target.id === 'finish-service' || event.target.id === 'mark-absent') {
-        const ticket = staffActiveTicket();
-        if (ticket) {
-          const absent = event.target.id === 'mark-absent';
-          if (backendEnabled) {
-            try {
-              await backendRpc('advance_ticket', { p_ticket_id: ticket.id, p_action: absent ? 'absent' : 'done' });
-              actionMessage = absent ? `Senha ${ticket.number} marcada como ausência.` : `Senha ${ticket.number} concluída.`;
-              await refreshRemoteData();
-            } catch (error) {
-              actionMessage = error.message;
-              render();
-            }
-            return;
-          }
-          ticket.state = absent ? 'absent' : 'done';
-          ticket.updatedAt = Date.now();
-          actionMessage = absent ? `Senha ${ticket.number} marcada como ausência.` : `Senha ${ticket.number} concluída.`;
-          saveData();
-        }
-      }
-
-      if (event.target.id === 'clear-queue' && confirm('Apagar todas as senhas guardadas neste navegador?')) {
-        data = { tickets: [] };
-        lastIssued = null;
-        actionMessage = 'Fila local limpa.';
-        saveData();
-      }
-    });
-
-    document.getElementById('login-form').addEventListener('submit', async event => {
-      event.preventDefault();
-      const message = document.getElementById('login-message');
-      if (!backendEnabled) {
-        message.textContent = 'O atendimento está bloqueado até o Supabase ser configurado.';
-        return;
-      }
-      message.textContent = 'A validar acesso…';
-      try {
-        const credentials = Object.fromEntries(new FormData(event.currentTarget));
-        const authResponse = await fetch(`${backendUrl}/auth/v1/token?grant_type=password`, {
-          method: 'POST',
-          headers: { apikey: backendKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: credentials.email, password: credentials.password })
-        });
-        const authResult = await authResponse.json();
-        if (!authResponse.ok) throw new Error(authResult.msg || authResult.message || 'Email ou palavra-passe inválidos.');
-        accessToken = authResult.access_token;
-        const profiles = await backendRequest(`/rest/v1/profiles?select=id,full_name,role,service_id,counter_id,active,counters(name)&id=eq.${encodeURIComponent(authResult.user.id)}&active=eq.true&role=eq.attendant`);
-        if (!profiles.length) throw new Error('Esta conta não está autorizada como funcionário ativo.');
-        staffProfile = profiles[0];
-        const counter = Array.isArray(staffProfile.counters) ? staffProfile.counters[0] : staffProfile.counters;
-        staffProfile.counter_name = counter?.name || 'Balcão por atribuir';
-        message.textContent = '';
-        actionMessage = '';
-        render();
-        showView('staff');
-        await refreshRemoteData();
-      } catch (error) {
-        accessToken = '';
-        staffProfile = null;
-        message.textContent = error.message;
-      }
-    });
-
-    document.getElementById('logout').addEventListener('click', async () => {
-      try { await backendRequest('/auth/v1/logout', { method: 'POST' }); } catch { }
-      accessToken = '';
-      staffProfile = null;
-      showView('login');
-      render();
     });
 
     window.addEventListener('storage', event => {

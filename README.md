@@ -6,9 +6,13 @@ O **ChamaJá** é uma aplicação web estática de gestão de senhas. Pode funci
 
 ## Versão local sem instalação
 
-Abre `index.html` diretamente no navegador. Esta versão não usa PHP, servidor, base de dados, bibliotecas externas ou instalação. A fila fica guardada no armazenamento local do navegador e pode ser usada nas opções **Retirar senha**, **Painel** e **Atendimento**.
+Abre `index.html` diretamente no navegador. Esta versão pública não usa PHP, servidor, base de dados, bibliotecas externas ou instalação. A fila fica guardada no armazenamento local do navegador e pode ser usada nas opções **Retirar senha** e **Painel**.
 
-Esta modalidade é apenas local: não tem login nem sincroniza dados com outros computadores ou telemóveis. As páginas PHP abaixo continuam a exigir um servidor PHP e uma base de dados para funcionarem.
+Esta modalidade é apenas local: não tem login nem sincroniza dados com outros computadores ou telemóveis. O atendimento dos funcionários está separado em `funcionarios.html` e requer o Supabase configurado.
+
+## Portal de funcionários
+
+Abre `funcionarios.html` ou usa a ligação **Funcionários** na navegação pública. A página só mostra controlos após autenticação de um perfil `attendant` ativo, com serviço e balcão atribuídos. Sem configuração válida do Supabase, o login permanece bloqueado.
 
 ## Backend online com Supabase
 
@@ -97,38 +101,15 @@ No frontend usa-se apenas a chave pública `anon`/publishable. **Nunca coloques 
 chamaja/
 ├── assets/
 │   ├── css/style.css
-│   ├── js/app.js
-│   ├── img/
-│   └── sounds/notify.wav
-├── config/database.php
-├── includes/
-│   ├── auth.php
-│   ├── functions.php
-│   ├── header.php
-│   ├── sidebar.php
-│   └── footer.php
-├── admin/
-│   ├── dashboard.php
-│   ├── servicos.php
-│   ├── funcionarios.php
-│   ├── balcoes.php
-│   ├── relatorios.php
-│   ├── historico.php
-│   └── definicoes.php
-├── funcionario/
-│   ├── dashboard.php
-│   └── atendimento.php
-├── api/
-│   ├── proxima_senha.php
-│   ├── painel.php
-│   └── estatisticas.php
-├── index.php
-├── senha.php
-├── painel.php
-├── login.php
-├── logout.php
+│   └── js/
+│       ├── backend-config.js
+│       └── staff.js
+├── supabase/schema.sql
+├── funcionarios.html
+├── index.html
+├── README.md
 ├── database.sql
-└── README.md
+└── [ficheiros PHP antigos]
 ```
 
 ## Segurança implementada

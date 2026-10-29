@@ -40,7 +40,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--orange); outlin
 .brand-mark { display: grid; width: 38px; aspect-ratio: 1; place-items: center; border-radius: 8px; color: white; background: var(--teal); font-size: 13px; }
 .main-nav { display: flex; align-items: center; gap: 4px; }
 .nav-button, .text-button { border: 0; color: var(--muted); background: transparent; cursor: pointer; }
-.nav-button { min-height: 42px; padding: 0 13px; border-radius: 6px; }
+.nav-button { min-height: 42px; padding: 0 13px; border-radius: 6px; text-decoration: none; }
 .nav-button:hover, .nav-button.active { color: var(--teal-dark); background: #e4ebe4; }
 
 .page-shell { width: min(1120px, calc(100% - 48px)); min-height: calc(100vh - 130px); margin: 0 auto; padding: 62px 0 48px; }
@@ -79,6 +79,7 @@ h1 span { color: var(--teal); font-style: italic; }
 
 .section-heading { margin-bottom: 28px; }
 .section-heading h2 { margin-bottom: 8px; font-size: 34px; }
+.portal-title { margin-bottom: 14px; font-size: 42px; }
 .section-heading > p:last-child { color: var(--muted); }
 .service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .service-card { min-height: 142px; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: white; text-align: left; cursor: pointer; }
