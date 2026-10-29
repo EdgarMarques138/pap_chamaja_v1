@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f3eb">
+  <title>ChamaJá | Administração</title>
+  <link href="assets/css/style.css" rel="stylesheet">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="brand-mark">CJ</span><span>ChamaJá</span></a>
+    <a class="nav-button" href="index.html">Voltar ao site</a>
+  </header>
+
+  <main class="page-shell">
+    <section id="admin-login-view">
+      <div class="section-heading">
+        <p class="eyebrow">Acesso restrito</p>
+        <h1 class="portal-title">Administração</h1>
+        <p>Entra para gerir áreas, balcões e funcionários.</p>
+      </div>
+      <form class="staff-login" id="admin-login-form">
+        <label for="admin-login-email">Email</label>
+        <input id="admin-login-email" name="email" type="email" autocomplete="username" required>
+        <label for="admin-login-password">Palavra-passe</label>
+        <input id="admin-login-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="button button-primary" id="admin-login-submit" type="submit">Entrar</button>
+        <p class="action-message" id="admin-login-message" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="admin-view" hidden>
+      <div class="section-heading">
+        <p class="eyebrow">Gestão do sistema</p>
+        <div class="staff-heading-row"><h1 class="portal-title" id="admin-name">Administração</h1><button class="button button-outline" id="admin-logout" type="button">Terminar sessão</button></div>
+        <p>Configura as áreas de atendimento e as respetivas equipas.</p>
+      </div>
+
+      <section class="admin-section">
+        <h2>Balcões</h2>
+        <form class="admin-form" id="counter-form">
+          <label for="counter-name">Nome do balcão</label>
+          <input id="counter-name" name="name" maxlength="80" placeholder="Ex.: Balcão 5" required>
+          <label for="counter-service">Área</label>
+          <select id="counter-service" name="service_id" required></select>
+          <button class="button button-primary" type="submit">Adicionar balcão</button>
+          <p class="action-message" id="counter-message" aria-live="polite"></p>
+        </form>
+        <div class="admin-list" id="counter-list" aria-live="polite"></div>
+      </section>
+
+      <section class="admin-section">
+        <h2>Funcionários</h2>
+        <form class="admin-form admin-employee-form" id="employee-form">
+          <label for="employee-name">Nome</label>
+          <input id="employee-name" name="full_name" maxlength="120" required>
+          <label for="employee-email">Email de acesso</label>
+          <input id="employee-email" name="email" type="email" autocomplete="off" required>
+          <label for="employee-password">Palavra-passe inicial</label>
+          <input id="employee-password" name="password" type="password" minlength="8" autocomplete="new-password" required>
+          <label for="employee-counter">Balcão e área</label>
+          <select id="employee-counter" name="counter_id" required></select>
+          <button class="button button-primary" id="employee-submit" type="submit">Adicionar funcionário</button>
+          <p class="action-message" id="employee-message" aria-live="polite"></p>
+        </form>
+        <div class="admin-list" id="employee-list" aria-live="polite"></div>
+      </section>
+    </section>
+  </main>
+
+  <footer class="page-footer">ChamaJá <span>·</span> portal de administração</footer>
+
+  <script src="assets/js/backend-config.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>

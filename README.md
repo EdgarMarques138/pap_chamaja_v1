@@ -12,7 +12,11 @@ Esta modalidade é apenas local: não tem login nem sincroniza dados com outros 
 
 ## Portal de funcionários
 
-Abre `funcionarios.html` ou usa a ligação **Funcionários** na navegação pública. A página só mostra controlos após autenticação de um perfil `attendant` ativo e com balcão atribuído. A lista mostra senhas de todos os serviços; quando `service_id` está definido, as ações ficam limitadas a esse serviço. Com `service_id = NULL`, o funcionário pode operar em todos os serviços. Sem configuração válida do Supabase, o login permanece bloqueado.
+Abre `funcionarios.html` ou usa a ligação **Funcionários** na navegação pública. Cada balcão pertence a uma área/serviço. O funcionário vê as senhas em espera dessa área e o histórico do seu balcão; só pode chamar e gerir senhas no balcão atribuído. As permissões também são aplicadas pelas políticas do Supabase.
+
+## Portal de administração
+
+Abre `admin.html` e entra com um perfil ativo de administrador. A página permite criar balcões, alterar a área de cada balcão, ativar/desativar balcões, criar contas de funcionários e atribuir cada funcionário a um balcão. A criação de contas usa o registo de utilizadores do Supabase; ativa **Authentication → Sign In / Providers → Email** no projeto. Se a confirmação de email estiver ativa, o funcionário terá de confirmar o endereço antes de entrar.
 
 ## Backend online com Supabase
 
@@ -27,21 +31,21 @@ Abre `funcionarios.html` ou usa a ligação **Funcionários** na navegação pú
     };
     ```
 
-4. Em **Authentication → Users**, cria os utilizadores do atendimento. Para cada utilizador, copia o UUID e cria um perfil na tabela `profiles`:
+4. Cria o primeiro utilizador administrador em **Authentication → Users**. Copia o UUID e associa-o a um perfil administrador pelo **SQL Editor**:
 
     ```sql
     insert into public.profiles (id, full_name, role, service_id, counter_id)
     values (
-       'UUID-DO-UTILIZADOR',
-       'Nome do funcionário',
-       'attendant',
-       '00000000-0000-4000-8000-000000000004',
-       '00000000-0000-4000-8000-000000000011'
+       'UUID-DO-ADMINISTRADOR',
+       'Nome do administrador',
+       'admin',
+       null,
+       null
     );
     ```
 
-   Usa `role = 'attendant'`. Só perfis ativos de funcionários com serviço e balcão atribuídos podem entrar no atendimento e chamar senhas. Os IDs dos balcões 1–4 terminam em `011`–`014`; os IDs dos serviços estão definidos no schema.
-5. Publica as alterações no GitHub Pages. A emissão pública e o painel usam o backend; o atendimento exige sessão. A gestão de contas e perfis é feita no painel do Supabase.
+   Entra em `admin.html` com esta conta para criar e gerir balcões e funcionários. Os quatro balcões iniciais são associados às quatro áreas existentes pelo schema; podes adicionar mais balcões na administração. Perfis de funcionários ativos precisam de um balcão ativo.
+5. Publica as alterações no GitHub Pages. A emissão pública e o painel usam o backend; atendimento e administração exigem sessão.
 
 No frontend usa-se apenas a chave pública `anon`/publishable. **Nunca coloques a chave `service_role` no site.** Os dados locais existentes não são migrados automaticamente para o Supabase.
 

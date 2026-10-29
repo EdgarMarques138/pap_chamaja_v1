@@ -10,8 +10,12 @@ create table if not exists public.services (
 create table if not exists public.counters (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
+  service_id uuid references public.services(id) on delete restrict,
   active boolean not null default true
 );
+
+alter table public.counters
+  add column if not exists service_id uuid references public.services(id) on delete restrict;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -22,6 +26,26 @@ create table if not exists public.profiles (
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+create or replace function public.sync_counter_service_to_profiles()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if new.service_id is distinct from old.service_id then
+    update public.profiles set service_id = new.service_id
+    where counter_id = new.id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists sync_counter_service on public.counters;
+create trigger sync_counter_service
+after update of service_id on public.counters
+for each row execute function public.sync_counter_service_to_profiles();
 
 create table if not exists public.ticket_sequences (
   service_id uuid not null references public.services(id) on delete restrict,
@@ -61,12 +85,24 @@ on conflict (id) do update set
   description = excluded.description,
   position = excluded.position;
 
-insert into public.counters (id, name) values
-  ('00000000-0000-4000-8000-000000000011', 'Balcão 1'),
-  ('00000000-0000-4000-8000-000000000012', 'Balcão 2'),
-  ('00000000-0000-4000-8000-000000000013', 'Balcão 3'),
-  ('00000000-0000-4000-8000-000000000014', 'Balcão 4')
-on conflict (id) do update set name = excluded.name;
+insert into public.counters (id, name, service_id) values
+  ('00000000-0000-4000-8000-000000000011', 'Balcão 1', '00000000-0000-4000-8000-000000000001'),
+  ('00000000-0000-4000-8000-000000000012', 'Balcão 2', '00000000-0000-4000-8000-000000000002'),
+  ('00000000-0000-4000-8000-000000000013', 'Balcão 3', '00000000-0000-4000-8000-000000000003'),
+  ('00000000-0000-4000-8000-000000000014', 'Balcão 4', '00000000-0000-4000-8000-000000000004')
+on conflict (id) do update set
+  name = excluded.name,
+  service_id = excluded.service_id;
+
+update public.counters
+set service_id = '00000000-0000-4000-8000-000000000004'
+where service_id is null;
+
+alter table public.counters alter column service_id set not null;
+
+update public.profiles p set service_id = c.service_id
+from public.counters c
+where p.counter_id = c.id and p.service_id is distinct from c.service_id;
 
 create or replace function public.is_active_staff()
 returns boolean
@@ -109,7 +145,17 @@ create policy "admins manage services" on public.services
 
 drop policy if exists "active counters are public" on public.counters;
 create policy "active counters are public" on public.counters
-  for select to anon, authenticated using (active or public.is_admin());
+  for select to anon, authenticated using (
+    active
+    or public.is_admin()
+    or exists (
+      select 1 from public.profiles
+      where id = (select auth.uid())
+        and active
+        and role = 'attendant'
+        and counter_id = counters.id
+    )
+  );
 drop policy if exists "admins manage counters" on public.counters;
 create policy "admins manage counters" on public.counters
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
@@ -123,15 +169,27 @@ create policy "admins manage profiles" on public.profiles
 
 drop policy if exists "public can read queue tickets" on public.tickets;
 create policy "public can read queue tickets" on public.tickets
-  for select to anon, authenticated using (state in ('waiting', 'called', 'serving', 'done'));
+  for select to anon using (state in ('waiting', 'called', 'serving', 'done'));
 drop policy if exists "active attendants can read all tickets" on public.tickets;
-create policy "active attendants can read all tickets" on public.tickets
+drop policy if exists "attendants read assigned area tickets" on public.tickets;
+create policy "attendants read assigned area tickets" on public.tickets
   for select to authenticated using (
     exists (
-      select 1 from public.profiles
-      where id = (select auth.uid()) and active and role = 'attendant'
+      select 1
+      from public.profiles p
+      join public.counters c on c.id = p.counter_id
+      where p.id = (select auth.uid())
+        and p.active
+        and p.role = 'attendant'
+        and (
+          tickets.counter_id = c.id
+          or (c.active and tickets.state = 'waiting' and tickets.service_id = c.service_id)
+        )
     )
   );
+drop policy if exists "admins read all tickets" on public.tickets;
+create policy "admins read all tickets" on public.tickets
+  for select to authenticated using (public.is_admin());
 
 grant select on public.services, public.counters, public.tickets to anon, authenticated;
 grant select on public.profiles to authenticated;
@@ -178,6 +236,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_profile public.profiles%rowtype;
+  v_counter public.counters%rowtype;
   v_ticket public.tickets%rowtype;
 begin
   select * into v_profile from public.profiles
@@ -188,7 +247,11 @@ begin
   if v_profile.counter_id is null then
     raise exception 'Atribua um balcão ao funcionário antes de chamar senhas.' using errcode = 'P0001';
   end if;
-  perform 1 from public.counters where id = v_profile.counter_id for update;
+  select * into v_counter from public.counters
+  where id = v_profile.counter_id and active for update;
+  if not found then
+    raise exception 'O balcão atribuído está inativo.' using errcode = 'P0001';
+  end if;
   if exists (
     select 1 from public.tickets
     where counter_id = v_profile.counter_id and state in ('called', 'serving')
@@ -198,7 +261,7 @@ begin
 
   select * into v_ticket from public.tickets
   where state = 'waiting'
-    and (v_profile.service_id is null or service_id = v_profile.service_id)
+    and service_id = v_counter.service_id
   order by created_at, id
   limit 1
   for update skip locked;
@@ -226,6 +289,7 @@ set search_path = public, pg_temp
 as $$
 declare
   v_profile public.profiles%rowtype;
+  v_counter public.counters%rowtype;
   v_ticket public.tickets%rowtype;
   v_state text;
 begin
@@ -233,6 +297,11 @@ begin
   where id = (select auth.uid()) and active and role = 'attendant';
   if not found then
     raise exception 'Acesso reservado a funcionários ativos.' using errcode = '42501';
+  end if;
+  select * into v_counter from public.counters
+  where id = v_profile.counter_id;
+  if not found then
+    raise exception 'O balcão atribuído está inativo.' using errcode = 'P0001';
   end if;
 
   if p_action = 'start' then
@@ -249,7 +318,7 @@ begin
   where id = p_ticket_id for update;
   if not found
     or v_ticket.counter_id is distinct from v_profile.counter_id
-    or (v_profile.service_id is not null and v_ticket.service_id <> v_profile.service_id)
+    or v_ticket.service_id <> v_counter.service_id
   then
     raise exception 'Senha não encontrada no balcão atribuído.' using errcode = '42501';
   end if;
@@ -272,6 +341,7 @@ $$;
 
 revoke all on function public.is_active_staff() from public, anon;
 revoke all on function public.is_admin() from public, anon;
+revoke all on function public.sync_counter_service_to_profiles() from public, anon, authenticated;
 revoke all on function public.emit_ticket(uuid) from public;
 revoke all on function public.call_next_ticket() from public, anon;
 revoke all on function public.advance_ticket(uuid, text) from public, anon;

@@ -181,7 +181,7 @@
       if (!authResponse.ok) throw new Error(auth.msg || auth.message || 'Email ou palavra-passe inválidos.');
       accessToken = auth.access_token;
       const query = new URLSearchParams({
-        select: 'id,full_name,role,service_id,counter_id,active,services(name),counters(name)',
+        select: 'id,full_name,role,service_id,counter_id,active,counters(name,service_id,services(name))',
         id: `eq.${auth.user.id}`,
         active: 'eq.true',
         role: 'eq.attendant'
@@ -189,12 +189,12 @@
       const profiles = await request(`/rest/v1/profiles?${query}`);
       if (!profiles.length) throw new Error('Esta conta não está autorizada como funcionário ativo.');
       const row = profiles[0];
-      const service = Array.isArray(row.services) ? row.services[0] : row.services;
       const counter = Array.isArray(row.counters) ? row.counters[0] : row.counters;
-      if (!row.counter_id || !counter || (row.service_id && !service)) {
-        throw new Error('O perfil precisa de ter um balcão atribuído e um serviço válido.');
+      const service = Array.isArray(counter?.services) ? counter.services[0] : counter?.services;
+      if (!row.counter_id || !counter || !counter.service_id || !service) {
+        throw new Error('O balcão atribuído precisa de ter uma área válida.');
       }
-      profile = { ...row, service_name: service?.name || 'Todos os serviços', counter_name: counter.name };
+      profile = { ...row, service_id: counter.service_id, service_name: service.name, counter_name: counter.name };
       setText('login-message', '');
       setText('action-message', 'Sessão iniciada.');
       showStaff();

@@ -127,6 +127,21 @@ h1 span { color: var(--teal); font-style: italic; }
 .staff-actions { padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: white; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; }
 .action-message { flex-basis: 100%; min-height: 22px; margin: 4px 0; color: var(--teal-dark); font-size: 14px; }
 .text-button { flex-basis: 100%; padding: 10px 0; color: #913f2f; text-align: left; text-decoration: underline; }
+.admin-section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+.admin-section h2 { margin-bottom: 16px; font-size: 25px; }
+.admin-form { width: min(100%, 680px); margin-bottom: 16px; display: grid; grid-template-columns: minmax(130px, .7fr) minmax(0, 1fr) auto; align-items: center; gap: 10px 14px; }
+.admin-form label { color: var(--ink); font-size: 14px; font-weight: 700; }
+.admin-form input, .admin-form select, .admin-row select { width: 100%; min-width: 0; min-height: 44px; padding: 0 10px; border: 1px solid #aebdb6; border-radius: 5px; color: var(--ink); background: white; font: inherit; }
+.admin-form .button, .admin-form .action-message { grid-column: 2 / -1; }
+.admin-employee-form { grid-template-columns: minmax(150px, .7fr) minmax(0, 1fr); }
+.admin-employee-form .button, .admin-employee-form .action-message { grid-column: 2; }
+.admin-list { border-top: 1px solid var(--line); }
+.admin-row { min-height: 72px; padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
+.admin-row > div:first-child { display: grid; gap: 5px; }
+.admin-row > div:first-child span { color: var(--muted); font-size: 13px; }
+.admin-row-actions { display: flex; align-items: center; gap: 8px; }
+.admin-row-actions select { min-width: 170px; }
+.admin-row-actions .button { min-height: 42px; padding-inline: 12px; }
 .page-footer { padding: 18px 24px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; font-size: 13px; }
 .page-footer span { padding: 0 4px; color: var(--orange); }
 
@@ -140,6 +155,11 @@ h1 span { color: var(--teal); font-style: italic; }
   h1 { font-size: 44px; }
   .current-box { min-height: 265px; }
   .staff-heading-row { align-items: flex-start; flex-direction: column; gap: 0; }
+  .admin-form, .admin-employee-form { grid-template-columns: 1fr; }
+  .admin-form .button, .admin-form .action-message, .admin-employee-form .button, .admin-employee-form .action-message { grid-column: 1; }
+  .admin-row { align-items: flex-start; flex-direction: column; }
+  .admin-row-actions { width: 100%; }
+  .admin-row-actions select { flex: 1; }
   .stats-row { margin-top: 30px; }
   .stat { align-items: flex-start; flex-direction: column; gap: 7px; padding: 14px 10px; }
   .stat span { font-size: 12px; }
