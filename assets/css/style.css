@@ -135,8 +135,13 @@ h1 span { color: var(--teal); font-style: italic; }
 .admin-form .button, .admin-form .action-message { grid-column: 2 / -1; }
 .admin-employee-form { grid-template-columns: minmax(150px, .7fr) minmax(0, 1fr); }
 .admin-employee-form .button, .admin-employee-form .action-message { grid-column: 2; }
-.admin-area-form { grid-template-columns: minmax(150px, .7fr) minmax(0, 1fr); }
-.admin-area-form .button, .admin-area-form .action-message { grid-column: 2; }
+.admin-area-form { grid-template-columns: minmax(0, 1.1fr) minmax(90px, .55fr) minmax(0, 1.4fr); align-items: start; gap: 14px; }
+.admin-area-form .form-field { min-width: 0; display: grid; align-content: start; gap: 7px; }
+.admin-area-form .form-field label { margin: 0; }
+.admin-area-form .form-field input { width: 100%; }
+.admin-area-form .form-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.admin-area-form .form-actions .button { width: max-content; }
+.admin-area-form .form-actions .action-message { flex: 1 1 220px; min-height: 22px; margin: 0; }
 .admin-list { border-top: 1px solid var(--line); }
 .admin-row { min-height: 72px; padding: 12px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--line); }
 .admin-row > div:first-child { display: grid; gap: 5px; }
@@ -162,7 +167,10 @@ h1 span { color: var(--teal); font-style: italic; }
   .current-box { min-height: 265px; }
   .staff-heading-row { align-items: flex-start; flex-direction: column; gap: 0; }
   .admin-form, .admin-employee-form { grid-template-columns: 1fr; }
+  .admin-area-form { grid-template-columns: 1fr; }
   .admin-form .button, .admin-form .action-message, .admin-employee-form .button, .admin-employee-form .action-message { grid-column: 1; }
+  .admin-area-form .form-actions { grid-column: 1; }
+  .admin-area-form .form-actions .button { width: 100%; }
   .admin-row { align-items: flex-start; flex-direction: column; }
   .admin-row-actions { width: 100%; }
   .admin-row-actions select { flex: 1; }
