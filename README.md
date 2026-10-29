@@ -12,7 +12,7 @@ Esta modalidade é apenas local: não tem login nem sincroniza dados com outros 
 
 ## Portal de funcionários
 
-Abre `funcionarios.html` ou usa a ligação **Funcionários** na navegação pública. A página só mostra controlos após autenticação de um perfil `attendant` ativo, com serviço e balcão atribuídos. A lista mostra senhas de todos os serviços; chamar e atualizar senhas continua limitado ao serviço e balcão do funcionário. Sem configuração válida do Supabase, o login permanece bloqueado.
+Abre `funcionarios.html` ou usa a ligação **Funcionários** na navegação pública. A página só mostra controlos após autenticação de um perfil `attendant` ativo e com balcão atribuído. A lista mostra senhas de todos os serviços; quando `service_id` está definido, as ações ficam limitadas a esse serviço. Com `service_id = NULL`, o funcionário pode operar em todos os serviços. Sem configuração válida do Supabase, o login permanece bloqueado.
 
 ## Backend online com Supabase
 

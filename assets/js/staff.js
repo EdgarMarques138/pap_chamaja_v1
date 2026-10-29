@@ -191,10 +191,10 @@
       const row = profiles[0];
       const service = Array.isArray(row.services) ? row.services[0] : row.services;
       const counter = Array.isArray(row.counters) ? row.counters[0] : row.counters;
-      if (!row.service_id || !row.counter_id || !service || !counter) {
-        throw new Error('O perfil precisa de ter serviço e balcão atribuídos.');
+      if (!row.counter_id || !counter || (row.service_id && !service)) {
+        throw new Error('O perfil precisa de ter um balcão atribuído e um serviço válido.');
       }
-      profile = { ...row, service_name: service.name, counter_name: counter.name };
+      profile = { ...row, service_name: service?.name || 'Todos os serviços', counter_name: counter.name };
       setText('login-message', '');
       setText('action-message', 'Sessão iniciada.');
       showStaff();

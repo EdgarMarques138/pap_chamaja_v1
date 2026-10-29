@@ -185,8 +185,8 @@ begin
   if not found then
     raise exception 'Acesso reservado a funcionários ativos.' using errcode = '42501';
   end if;
-  if v_profile.counter_id is null or v_profile.service_id is null then
-    raise exception 'Atribua um serviço e um balcão ao funcionário antes de chamar senhas.' using errcode = 'P0001';
+  if v_profile.counter_id is null then
+    raise exception 'Atribua um balcão ao funcionário antes de chamar senhas.' using errcode = 'P0001';
   end if;
   perform 1 from public.counters where id = v_profile.counter_id for update;
   if exists (
@@ -198,7 +198,7 @@ begin
 
   select * into v_ticket from public.tickets
   where state = 'waiting'
-    and service_id = v_profile.service_id
+    and (v_profile.service_id is null or service_id = v_profile.service_id)
   order by created_at, id
   limit 1
   for update skip locked;
@@ -249,7 +249,7 @@ begin
   where id = p_ticket_id for update;
   if not found
     or v_ticket.counter_id is distinct from v_profile.counter_id
-    or v_ticket.service_id <> v_profile.service_id
+    or (v_profile.service_id is not null and v_ticket.service_id <> v_profile.service_id)
   then
     raise exception 'Senha não encontrada no balcão atribuído.' using errcode = '42501';
   end if;
