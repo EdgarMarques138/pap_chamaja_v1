@@ -4,6 +4,12 @@
 
 O **ChamaJá** é um sistema web de gestão de senhas e listas de espera desenvolvido em PHP, MySQL, HTML, CSS e JavaScript. Inclui emissão de senhas, painel de chamadas em tempo real, área de funcionários, administração, histórico, estatísticas e relatórios.
 
+## Versão local sem instalação
+
+Abre `index.html` diretamente no navegador. Esta versão não usa PHP, servidor, base de dados, bibliotecas externas ou instalação. A fila fica guardada no armazenamento local do navegador e pode ser usada nas opções **Retirar senha**, **Painel** e **Atendimento**.
+
+Esta modalidade é apenas local: não tem login nem sincroniza dados com outros computadores ou telemóveis. As páginas PHP abaixo continuam a exigir um servidor PHP e uma base de dados para funcionarem.
+
 ## Requisitos
 
 - XAMPP com Apache, PHP 8+ e MySQL/MariaDB

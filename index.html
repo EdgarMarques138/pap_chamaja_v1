@@ -1,50 +1,325 @@
 <!doctype html>
-<html lang="pt">
+<html lang="pt-PT">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ChamaJá</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <meta name="theme-color" content="#f3f7f4">
+  <title>ChamaJá | Senhas</title>
   <link href="assets/css/style.css" rel="stylesheet">
 </head>
 <body>
-  <main class="hero">
-    <div class="container py-4 py-lg-5">
-      <nav class="d-flex justify-content-between align-items-center mb-5">
-        <a href="/chamaja/" class="brand-logo d-flex align-items-center gap-2"><span class="brand-mark"><i class="bi bi-megaphone-fill"></i></span> ChamaJá</a>
-      </nav>
-      <div class="row align-items-center min-vh-75 g-5">
-        <section class="col-lg-7">
-          <span class="badge rounded-pill text-bg-light border px-3 py-2 mb-3">Sistema de Senhas Digitais</span>
-          <h1 class="hero-title">A sua vez, <span class="gradient-text">sem complicações.</span></h1>
-          <p class="lead text-secondary mt-4 mb-4" style="max-width:650px">Organize filas, reduza tempos de espera e acompanhe atendimentos com uma experiência simples para clientes e funcionários.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary btn-lg px-4" href="senha.php"><i class="bi bi-ticket-perforated me-2"></i>Retirar Senha</a>
-            <a class="btn btn-outline-dark btn-lg px-4" href="painel.php"><i class="bi bi-display me-2"></i>Painel de Chamadas</a>
+  <header class="topbar">
+    <button class="brand" type="button" data-view="home" aria-label="ChamaJá, início"><span class="brand-mark">CJ</span><span>ChamaJá</span></button>
+    <nav class="main-nav" aria-label="Navegação principal">
+      <button class="nav-button active" type="button" data-view="home" aria-pressed="true">Início</button>
+      <button class="nav-button" type="button" data-view="emit" aria-pressed="false">Retirar senha</button>
+      <button class="nav-button" type="button" data-view="panel" aria-pressed="false">Painel</button>
+      <button class="nav-button" type="button" data-view="staff" aria-pressed="false">Atendimento</button>
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <section class="view" id="view-home">
+      <div class="home-grid">
+        <div class="home-copy">
+          <p class="eyebrow">Gestão de filas</p>
+          <h1>A sua vez,<br><span>sem complicações.</span></h1>
+          <p class="intro">Escolha um serviço, acompanhe a fila e chame a próxima senha a partir deste navegador.</p>
+          <div class="home-actions">
+            <button class="button button-primary" type="button" data-view="emit">Retirar senha</button>
+            <button class="button button-outline" type="button" data-view="panel">Abrir painel</button>
           </div>
+          <p class="local-note">Modo local: os dados ficam guardados neste navegador.</p>
+        </div>
+        <aside class="current-box" aria-label="Atendimento atual" aria-live="polite">
+          <div class="box-heading"><span class="eyebrow">AGORA A ATENDER</span><span class="live-dot" aria-hidden="true"></span></div>
+          <strong class="current-number" id="home-current">---</strong>
+          <div class="counter-line"><span id="home-service">A aguardar chamada</span><span id="home-counter">—</span></div>
+          <p class="current-hint" id="home-hint">Ainda não foi chamada nenhuma senha.</p>
+        </aside>
+      </div>
+
+      <section class="stats-row" aria-label="Resumo da fila">
+        <div class="stat"><span>Em espera</span><strong id="home-waiting">0</strong></div>
+        <div class="stat"><span>Em atendimento</span><strong id="home-serving">0</strong></div>
+        <div class="stat"><span>Concluídas hoje</span><strong id="home-done">0</strong></div>
+      </section>
+    </section>
+
+    <section class="view" id="view-emit" hidden>
+      <div class="section-heading">
+        <p class="eyebrow">Nova senha</p>
+        <h2>Que serviço procura?</h2>
+        <p>Selecione um serviço para entrar na fila.</p>
+      </div>
+      <div class="service-grid" id="service-list"></div>
+      <div class="ticket-result" id="ticket-result" aria-live="polite" hidden>
+        <p class="eyebrow">Senha emitida</p>
+        <strong id="ticket-number">---</strong>
+        <p id="ticket-detail"></p>
+        <button class="button button-outline" type="button" data-view="emit">Retirar outra senha</button>
+      </div>
+    </section>
+
+    <section class="view" id="view-panel" hidden>
+      <div class="section-heading panel-heading">
+        <div><p class="eyebrow">Em direto neste navegador</p><h2>Painel de chamadas</h2></div>
+        <span class="updated-label">Atualização automática</span>
+      </div>
+      <div class="panel-grid">
+        <section class="panel-current" aria-live="polite">
+          <span class="eyebrow">Senha atual</span>
+          <strong class="panel-number" id="panel-current">---</strong>
+          <span class="panel-service" id="panel-service">A aguardar chamada</span>
+          <span class="panel-counter" id="panel-counter">—</span>
         </section>
-        <section class="col-lg-5" aria-label="Estado do atendimento">
-          <div class="glass-card p-4 p-lg-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <div><div class="text-secondary small">AGORA A ATENDER</div><div class="fs-1 fw-bold gradient-text">—</div></div>
-              <span class="brand-mark"><i class="bi bi-bell-fill"></i></span>
-            </div>
-            <div class="d-flex justify-content-between p-3 rounded-4 bg-body-tertiary"><span>Balcão</span><strong>—</strong></div>
-            <hr>
-            <div class="row g-3">
-              <div class="col-6"><div class="p-3 rounded-4 bg-body-tertiary"><small class="text-secondary">Em espera</small><div class="fs-3 fw-bold">—</div></div></div>
-              <div class="col-6"><div class="p-3 rounded-4 bg-body-tertiary"><small class="text-secondary">Espera média</small><div class="fs-3 fw-bold">—</div></div></div>
-            </div>
-          </div>
+        <section class="recent-list">
+          <h3>Últimas chamadas</h3>
+          <div id="recent-tickets" class="recent-items"></div>
         </section>
       </div>
-      <section class="row g-4 pb-5 service-cards" aria-label="Serviços">
-        <div class="col-md-4"><a class="action-card card-soft p-4 h-100" href="senha.php"><div class="service-icon mb-3"><i class="bi bi-ticket-perforated"></i></div><h2 class="h4">Retirar Senha</h2><p class="text-secondary mb-0">Escolha o serviço e receba a sua senha em segundos.</p></a></div>
-        <div class="col-md-4"><a class="action-card card-soft p-4 h-100" href="painel.php"><div class="service-icon mb-3"><i class="bi bi-tv"></i></div><h2 class="h4">Painel de Chamadas</h2><p class="text-secondary mb-0">Acompanhe a senha atual e as últimas chamadas.</p></a></div>
-        <div class="col-md-4"><a class="action-card card-soft p-4 h-100" href="login.php"><div class="service-icon mb-3"><i class="bi bi-person-lock"></i></div><h2 class="h4">Área de Funcionários</h2><p class="text-secondary mb-0">Acesso reservado à gestão de atendimentos e administração.</p></a></div>
-      </section>
-    </div>
+    </section>
+
+    <section class="view" id="view-staff" hidden>
+      <div class="section-heading">
+        <p class="eyebrow">Controlo local</p>
+        <h2>Atendimento</h2>
+        <p>Estas ações não têm autenticação e só alteram a fila guardada neste navegador.</p>
+      </div>
+      <div class="staff-layout">
+        <section class="staff-current" aria-live="polite">
+          <span class="eyebrow">Senha em curso</span>
+          <strong class="panel-number" id="staff-current">---</strong>
+          <span id="staff-status">Não há atendimento em curso.</span>
+          <span class="panel-counter" id="staff-service"></span>
+        </section>
+        <section class="staff-actions" aria-label="Ações de atendimento">
+          <button class="button button-primary" id="call-next" type="button">Chamar próxima</button>
+          <button class="button button-outline" id="start-service" type="button">Iniciar atendimento</button>
+          <button class="button button-outline" id="finish-service" type="button">Concluir</button>
+          <button class="button button-danger" id="mark-absent" type="button">Marcar ausência</button>
+          <p class="action-message" id="action-message" aria-live="polite"></p>
+          <button class="text-button" id="clear-queue" type="button">Limpar fila deste navegador</button>
+        </section>
+      </div>
+    </section>
   </main>
+
+  <footer class="page-footer">ChamaJá <span>·</span> funcionamento local, sem servidor</footer>
+
+  <script>
+    const storageKey = 'chamaja-local-v1';
+    const services = [
+      { id: 'tesouraria', name: 'Tesouraria', prefix: 'T', description: 'Pagamentos, faturas e assuntos financeiros.' },
+      { id: 'suporte', name: 'Suporte Técnico', prefix: 'S', description: 'Equipamentos, acessos e apoio técnico.' },
+      { id: 'secretaria', name: 'Secretaria', prefix: 'SE', description: 'Documentos e assuntos administrativos.' },
+      { id: 'geral', name: 'Atendimento Geral', prefix: 'A', description: 'Informações e encaminhamento.' }
+    ];
+    let memoryData = { tickets: [] };
+    let lastIssued = null;
+    let actionMessage = '';
+
+    function loadData() {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (!saved) return memoryData;
+        const parsed = JSON.parse(saved);
+        return parsed && Array.isArray(parsed.tickets) ? parsed : memoryData;
+      } catch {
+        return memoryData;
+      }
+    }
+
+    let data = loadData();
+
+    function saveData() {
+      memoryData = data;
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(data));
+      } catch {
+        actionMessage = 'O navegador não permite guardar os dados entre sessões.';
+      }
+      render();
+    }
+
+    function activeTicket() {
+      return data.tickets
+        .filter(ticket => ticket.state === 'called' || ticket.state === 'serving')
+        .sort((a, b) => b.calledAt - a.calledAt)[0] || null;
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value;
+    }
+
+    function renderServices() {
+      const list = document.getElementById('service-list');
+      list.replaceChildren();
+      for (const service of services) {
+        const waiting = data.tickets.filter(ticket => ticket.serviceId === service.id && ticket.state === 'waiting').length;
+        const button = document.createElement('button');
+        button.className = 'service-card';
+        button.type = 'button';
+        button.dataset.service = service.id;
+        const title = document.createElement('strong');
+        title.textContent = service.name;
+        const description = document.createElement('span');
+        description.textContent = service.description;
+        const count = document.createElement('small');
+        count.textContent = `${waiting} ${waiting === 1 ? 'pessoa' : 'pessoas'} em espera`;
+        button.append(title, description, count);
+        list.append(button);
+      }
+    }
+
+    function render() {
+      const active = activeTicket();
+      const waiting = data.tickets.filter(ticket => ticket.state === 'waiting').length;
+      const serving = data.tickets.filter(ticket => ticket.state === 'serving').length;
+      const today = new Date().toDateString();
+      const done = data.tickets.filter(ticket => ticket.state === 'done' && new Date(ticket.updatedAt).toDateString() === today).length;
+
+      setText('home-current', active ? active.number : '---');
+      setText('home-service', active ? active.serviceName : 'A aguardar chamada');
+      setText('home-counter', active ? 'Balcão 1' : '—');
+      setText('home-hint', active ? (active.state === 'serving' ? 'Atendimento em curso.' : 'Dirija-se ao balcão indicado.') : 'Ainda não foi chamada nenhuma senha.');
+      setText('home-waiting', String(waiting));
+      setText('home-serving', String(serving));
+      setText('home-done', String(done));
+
+      setText('panel-current', active ? active.number : '---');
+      setText('panel-service', active ? active.serviceName : 'A aguardar chamada');
+      setText('panel-counter', active ? 'Balcão 1' : '—');
+      setText('staff-current', active ? active.number : '---');
+      setText('staff-service', active ? active.serviceName : '');
+      setText('staff-status', active ? (active.state === 'serving' ? 'Atendimento em curso.' : 'Aguarda início do atendimento.') : 'Não há atendimento em curso.');
+      setText('action-message', actionMessage);
+
+      const recent = data.tickets.filter(ticket => ticket.calledAt).sort((a, b) => b.calledAt - a.calledAt).slice(0, 5);
+      const recentList = document.getElementById('recent-tickets');
+      recentList.replaceChildren();
+      if (!recent.length) {
+        const empty = document.createElement('p');
+        empty.className = 'empty-state';
+        empty.textContent = 'Ainda não existem chamadas.';
+        recentList.append(empty);
+      } else {
+        for (const ticket of recent) {
+          const row = document.createElement('div');
+          row.className = 'recent-row';
+          const number = document.createElement('strong');
+          number.textContent = ticket.number;
+          const label = document.createElement('span');
+          label.textContent = `${ticket.serviceName} · Balcão 1`;
+          row.append(number, label);
+          recentList.append(row);
+        }
+      }
+
+      document.getElementById('call-next').disabled = Boolean(active) || waiting === 0;
+      document.getElementById('start-service').disabled = !active || active.state !== 'called';
+      document.getElementById('finish-service').disabled = !active || active.state !== 'serving';
+      document.getElementById('mark-absent').disabled = !active;
+      renderServices();
+    }
+
+    function showView(name) {
+      for (const view of document.querySelectorAll('.view')) {
+        view.hidden = view.id !== `view-${name}`;
+      }
+      for (const button of document.querySelectorAll('.nav-button')) {
+        const selected = button.dataset.view === name;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-pressed', String(selected));
+      }
+      if (name === 'emit') {
+        document.getElementById('ticket-result').hidden = !lastIssued;
+      }
+    }
+
+    document.addEventListener('click', event => {
+      const nav = event.target.closest('[data-view]');
+      if (nav) {
+        showView(nav.dataset.view);
+        return;
+      }
+
+      const serviceButton = event.target.closest('[data-service]');
+      if (serviceButton) {
+        const service = services.find(item => item.id === serviceButton.dataset.service);
+        if (!service) return;
+        const previous = data.tickets.filter(ticket => ticket.serviceId === service.id)
+          .reduce((max, ticket) => Math.max(max, Number(ticket.number.slice(service.prefix.length)) || 0), 0);
+        const ticket = {
+          id: `${Date.now()}-${Math.random()}`,
+          number: service.prefix + String(previous + 1).padStart(3, '0'),
+          serviceId: service.id,
+          serviceName: service.name,
+          state: 'waiting',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          calledAt: null
+        };
+        data.tickets.push(ticket);
+        lastIssued = ticket;
+        actionMessage = '';
+        setText('ticket-number', ticket.number);
+        const ahead = data.tickets.filter(item => item.serviceId === service.id && item.state === 'waiting' && item.createdAt < ticket.createdAt).length;
+        setText('ticket-detail', `${service.name} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
+        document.getElementById('ticket-result').hidden = false;
+        saveData();
+        return;
+      }
+
+      if (event.target.id === 'call-next') {
+        if (activeTicket()) return;
+        const next = data.tickets.filter(ticket => ticket.state === 'waiting').sort((a, b) => a.createdAt - b.createdAt)[0];
+        if (next) {
+          next.state = 'called';
+          next.calledAt = Date.now();
+          next.updatedAt = next.calledAt;
+          actionMessage = `Senha ${next.number} chamada para o Balcão 1.`;
+          saveData();
+        }
+      }
+
+      if (event.target.id === 'start-service') {
+        const ticket = activeTicket();
+        if (ticket) {
+          ticket.state = 'serving';
+          ticket.updatedAt = Date.now();
+          actionMessage = `Atendimento da senha ${ticket.number} iniciado.`;
+          saveData();
+        }
+      }
+
+      if (event.target.id === 'finish-service' || event.target.id === 'mark-absent') {
+        const ticket = activeTicket();
+        if (ticket) {
+          const absent = event.target.id === 'mark-absent';
+          ticket.state = absent ? 'absent' : 'done';
+          ticket.updatedAt = Date.now();
+          actionMessage = absent ? `Senha ${ticket.number} marcada como ausência.` : `Senha ${ticket.number} concluída.`;
+          saveData();
+        }
+      }
+
+      if (event.target.id === 'clear-queue' && confirm('Apagar todas as senhas guardadas neste navegador?')) {
+        data = { tickets: [] };
+        lastIssued = null;
+        actionMessage = 'Fila local limpa.';
+        saveData();
+      }
+    });
+
+    window.addEventListener('storage', event => {
+      if (event.key === storageKey) {
+        data = loadData();
+        render();
+      }
+    });
+
+    render();
+  </script>
 </body>
 </html>
