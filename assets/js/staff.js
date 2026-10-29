@@ -50,7 +50,7 @@
     setText('current-ticket', active?.number || '---');
     setText('current-service', active?.service_name || 'Não há atendimento em curso.');
     setText('current-status', active ? (active.state === 'serving' ? 'Atendimento em curso.' : 'Aguarda início do atendimento.') : '');
-    setText('queue-count', `${waiting} ${waiting === 1 ? 'senha em espera' : 'senhas em espera'} neste serviço`);
+    setText('queue-count', `${waiting} ${waiting === 1 ? 'senha em espera' : 'senhas em espera'} no sistema`);
 
     element('call-next').disabled = Boolean(active) || waiting === 0;
     element('start-service').disabled = !active || active.state !== 'called';
@@ -65,17 +65,46 @@
       empty.className = 'empty-state';
       empty.textContent = 'Ainda não existem chamadas neste serviço.';
       list.append(empty);
-      return;
+    } else {
+      for (const ticket of recent) {
+        const row = document.createElement('div');
+        row.className = 'recent-row';
+        const number = document.createElement('strong');
+        number.textContent = ticket.number;
+        const label = document.createElement('span');
+        label.textContent = `${ticket.service_name} · ${ticket.state === 'done' ? 'Concluída' : ticket.counter_name || profile.counter_name}`;
+        row.append(number, label);
+        list.append(row);
+      }
     }
-    for (const ticket of recent) {
-      const row = document.createElement('div');
-      row.className = 'recent-row';
-      const number = document.createElement('strong');
-      number.textContent = ticket.number;
-      const label = document.createElement('span');
-      label.textContent = `${ticket.service_name} · ${ticket.state === 'done' ? 'Concluída' : ticket.counter_name || profile.counter_name}`;
-      row.append(number, label);
-      list.append(row);
+
+    const allTickets = element('all-tickets');
+    allTickets.replaceChildren();
+    for (const ticket of tickets) {
+      const row = document.createElement('tr');
+      const values = [
+        ticket.number,
+        ticket.service_name || 'Serviço',
+        ({ waiting: 'Em espera', called: 'Chamada', serving: 'Em atendimento', done: 'Concluída', absent: 'Ausente' })[ticket.state] || ticket.state,
+        new Date(ticket.created_at).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' }),
+        ticket.counter_name || '—'
+      ];
+      for (const [index, value] of values.entries()) {
+        const cell = document.createElement(index === 0 ? 'th' : 'td');
+        if (index === 0) cell.scope = 'row';
+        cell.textContent = value;
+        row.append(cell);
+      }
+      allTickets.append(row);
+    }
+    if (!tickets.length) {
+      const row = document.createElement('tr');
+      const cell = document.createElement('td');
+      cell.colSpan = 5;
+      cell.className = 'empty-state';
+      cell.textContent = 'Ainda não existem senhas.';
+      row.append(cell);
+      allTickets.append(row);
     }
   }
 
@@ -83,9 +112,8 @@
     if (!profile) return;
     const query = new URLSearchParams({
       select: 'id,number,service_id,counter_id,state,created_at,called_at,services(name),counters(name)',
-      service_id: `eq.${profile.service_id}`,
       order: 'created_at.desc',
-      limit: '100'
+      limit: '1000'
     });
     const result = await request(`/rest/v1/tickets?${query}`);
     tickets = result.map(ticket => ({

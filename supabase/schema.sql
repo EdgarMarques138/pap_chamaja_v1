@@ -124,6 +124,14 @@ create policy "admins manage profiles" on public.profiles
 drop policy if exists "public can read queue tickets" on public.tickets;
 create policy "public can read queue tickets" on public.tickets
   for select to anon, authenticated using (state in ('waiting', 'called', 'serving', 'done'));
+drop policy if exists "active attendants can read all tickets" on public.tickets;
+create policy "active attendants can read all tickets" on public.tickets
+  for select to authenticated using (
+    exists (
+      select 1 from public.profiles
+      where id = (select auth.uid()) and active and role = 'attendant'
+    )
+  );
 
 grant select on public.services, public.counters, public.tickets to anon, authenticated;
 grant select on public.profiles to authenticated;
