@@ -106,6 +106,13 @@ h1 span { color: var(--teal); font-style: italic; }
 .recent-row strong { color: var(--teal-dark); font-family: Georgia, "Times New Roman", serif; font-size: 20px; }
 .recent-row span, .empty-state { color: var(--muted); font-size: 13px; }
 .staff-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.staff-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.staff-heading-row h2 { margin-bottom: 8px; }
+.staff-login { width: min(100%, 480px); padding: 24px; display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.staff-login label { margin-top: 6px; color: var(--ink); font-size: 14px; font-weight: 700; }
+.staff-login input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid #aebdb6; border-radius: 5px; color: var(--ink); background: #fff; font: inherit; }
+.staff-login input:focus { border-color: var(--teal); outline: 2px solid rgba(18, 110, 100, .15); }
+.staff-login .button { margin-top: 12px; }
 .staff-current { min-height: 290px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .staff-current > span:not(.eyebrow) { margin-top: 8px; color: var(--muted); }
 .staff-actions { padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: white; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; }
@@ -123,6 +130,7 @@ h1 span { color: var(--teal); font-style: italic; }
   .home-grid { padding-top: 24px; }
   h1 { font-size: 44px; }
   .current-box { min-height: 265px; }
+  .staff-heading-row { align-items: flex-start; flex-direction: column; gap: 0; }
   .stats-row { margin-top: 30px; }
   .stat { align-items: flex-start; flex-direction: column; gap: 7px; padding: 14px 10px; }
   .stat span { font-size: 12px; }

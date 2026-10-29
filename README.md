@@ -2,7 +2,7 @@
 
 ## Sistema de Senhas Digitais
 
-O **ChamaJá** é um sistema web de gestão de senhas e listas de espera desenvolvido em PHP, MySQL, HTML, CSS e JavaScript. Inclui emissão de senhas, painel de chamadas em tempo real, área de funcionários, administração, histórico, estatísticas e relatórios.
+O **ChamaJá** é uma aplicação web estática de gestão de senhas. Pode funcionar localmente no navegador ou usar o Supabase como backend alojado para partilhar filas e autenticar funcionários. Não requer instalação local. Os ficheiros PHP/MySQL antigos continuam no repositório, mas não são usados pelo site GitHub Pages.
 
 ## Versão local sem instalação
 
@@ -10,13 +10,44 @@ Abre `index.html` diretamente no navegador. Esta versão não usa PHP, servidor,
 
 Esta modalidade é apenas local: não tem login nem sincroniza dados com outros computadores ou telemóveis. As páginas PHP abaixo continuam a exigir um servidor PHP e uma base de dados para funcionarem.
 
-## Requisitos
+## Backend online com Supabase
+
+1. Cria um projeto no Supabase, sem instalar software no computador.
+2. No **SQL Editor**, executa todo o conteúdo de `supabase/schema.sql`.
+3. Em **Project Settings → API**, copia o Project URL e a chave `anon`/publishable para `assets/js/backend-config.js`:
+
+    ```js
+    window.CHAMAJA_BACKEND = {
+       supabaseUrl: 'https://TEU-PROJETO.supabase.co',
+       supabaseAnonKey: 'A-TUA-CHAVE-PUBLICA'
+    };
+    ```
+
+4. Em **Authentication → Users**, cria os utilizadores do back office. Para cada utilizador, copia o UUID e cria um perfil na tabela `profiles`:
+
+    ```sql
+    insert into public.profiles (id, full_name, role, service_id, counter_id)
+    values (
+       'UUID-DO-UTILIZADOR',
+       'Nome do funcionário',
+       'attendant',
+       '00000000-0000-4000-8000-000000000004',
+       '00000000-0000-4000-8000-000000000011'
+    );
+    ```
+
+    Use `role = 'admin'` para um administrador. Os IDs dos balcões 1–4 terminam em `011`–`014`; os IDs dos serviços estão definidos no schema. Um administrador também precisa de um balcão para chamar senhas.
+5. Publica as alterações no GitHub Pages. A emissão pública e o painel usam o backend; o back office exige sessão. A gestão de contas e perfis é feita no painel do Supabase.
+
+No frontend usa-se apenas a chave pública `anon`/publishable. **Nunca coloques a chave `service_role` no site.** Os dados locais existentes não são migrados automaticamente para o Supabase.
+
+## Requisitos da versão PHP antiga
 
 - XAMPP com Apache, PHP 8+ e MySQL/MariaDB
 - Navegador moderno
 - Ligação à Internet para carregar Bootstrap, Bootstrap Icons e Chart.js por CDN
 
-## Instalação passo a passo
+## Execução da versão PHP antiga (opcional)
 
 1. Instala o XAMPP.
 2. Abre o XAMPP Control Panel e inicia **Apache** e **MySQL**.
