@@ -21,7 +21,7 @@ Abre `admin.html` e entra com um perfil ativo de administrador. A página permit
 ## Backend online com Supabase
 
 1. Cria um projeto no Supabase, sem instalar software no computador.
-2. No **SQL Editor**, executa todo o conteúdo de `supabase/schema.sql`.
+2. No **SQL Editor**, executa todo o conteúdo atualizado de `supabase/schema.sql`. Isto cria a relação entre balcões e áreas e atualiza o cache do schema da API.
 3. Em **Project Settings → API**, copia o Project URL e a chave `anon`/publishable para `assets/js/backend-config.js`:
 
     ```js
@@ -31,20 +31,9 @@ Abre `admin.html` e entra com um perfil ativo de administrador. A página permit
     };
     ```
 
-4. Cria o primeiro utilizador administrador em **Authentication → Users**. Copia o UUID e associa-o a um perfil administrador pelo **SQL Editor**:
+4. Para promover o único perfil de funcionário existente a administrador, executa `supabase/make_single_user_admin.sql` no **SQL Editor**. O script aborta sem alterações se não existir exatamente um perfil `attendant`.
 
-    ```sql
-    insert into public.profiles (id, full_name, role, service_id, counter_id)
-    values (
-       'UUID-DO-ADMINISTRADOR',
-       'Nome do administrador',
-       'admin',
-       null,
-       null
-    );
-    ```
-
-   Entra em `admin.html` com esta conta para criar e gerir balcões e funcionários. Os quatro balcões iniciais são associados às quatro áreas existentes pelo schema; podes adicionar mais balcões na administração. Perfis de funcionários ativos precisam de um balcão ativo.
+   Entra em `admin.html` com essa conta para criar e gerir balcões e funcionários. Os quatro balcões iniciais são associados às quatro áreas existentes pelo schema; podes adicionar mais balcões na administração. Perfis de funcionários ativos precisam de um balcão ativo.
 5. Publica as alterações no GitHub Pages. A emissão pública e o painel usam o backend; atendimento e administração exigem sessão.
 
 No frontend usa-se apenas a chave pública `anon`/publishable. **Nunca coloques a chave `service_role` no site.** Os dados locais existentes não são migrados automaticamente para o Supabase.

@@ -100,6 +100,30 @@ where service_id is null;
 
 alter table public.counters alter column service_id set not null;
 
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint constraint_row
+    where constraint_row.conrelid = 'public.counters'::regclass
+      and constraint_row.confrelid = 'public.services'::regclass
+      and constraint_row.contype = 'f'
+      and constraint_row.conkey = array[(
+        select attnum from pg_attribute
+        where attrelid = 'public.counters'::regclass and attname = 'service_id'
+      )]::smallint[]
+      and constraint_row.confkey = array[(
+        select attnum from pg_attribute
+        where attrelid = 'public.services'::regclass and attname = 'id'
+      )]::smallint[]
+  ) then
+    alter table public.counters
+      add constraint counters_service_id_fkey
+      foreign key (service_id) references public.services(id) on delete restrict;
+  end if;
+end;
+$$;
+
 update public.profiles p set service_id = c.service_id
 from public.counters c
 where p.counter_id = c.id and p.service_id is distinct from c.service_id;
@@ -349,3 +373,5 @@ grant execute on function public.is_active_staff() to authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
 grant execute on function public.emit_ticket(uuid) to anon, authenticated;
 grant execute on function public.call_next_ticket(), public.advance_ticket(uuid, text) to authenticated;
+
+notify pgrst, 'reload schema';
