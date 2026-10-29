@@ -41,10 +41,69 @@
     select.append(option);
   }
 
+  function renderAreas() {
+    const list = element('area-list');
+    list.replaceChildren();
+    if (!services.length) {
+      const empty = document.createElement('p');
+      empty.className = 'empty-state';
+      empty.textContent = 'Ainda não existem áreas.';
+      list.append(empty);
+      return;
+    }
+
+    for (const service of services) {
+      const row = document.createElement('div');
+      row.className = 'admin-row area-row';
+      const label = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = service.name;
+      const status = document.createElement('span');
+      status.textContent = `${service.prefix} · ${service.active ? 'Ativa' : 'Inativa'}`;
+      label.append(name, status);
+
+      const actions = document.createElement('div');
+      actions.className = 'admin-row-actions area-row-actions';
+      const nameInput = document.createElement('input');
+      nameInput.value = service.name;
+      nameInput.maxLength = 80;
+      nameInput.setAttribute('aria-label', `Nome da área ${service.name}`);
+      const prefixInput = document.createElement('input');
+      prefixInput.value = service.prefix;
+      prefixInput.maxLength = 4;
+      prefixInput.pattern = '[A-Za-z0-9]{1,4}';
+      prefixInput.setAttribute('aria-label', `Prefixo da área ${service.name}`);
+      const descriptionInput = document.createElement('input');
+      descriptionInput.value = service.description || '';
+      descriptionInput.maxLength = 240;
+      descriptionInput.setAttribute('aria-label', `Descrição da área ${service.name}`);
+
+      const save = document.createElement('button');
+      save.className = 'button button-outline';
+      save.type = 'button';
+      save.textContent = 'Guardar';
+      save.addEventListener('click', () => updateService(service, {
+        name: nameInput.value.trim(),
+        prefix: prefixInput.value.trim().toUpperCase(),
+        description: descriptionInput.value.trim()
+      }));
+
+      const toggle = document.createElement('button');
+      toggle.className = 'button button-outline';
+      toggle.type = 'button';
+      toggle.textContent = service.active ? 'Desativar' : 'Ativar';
+      toggle.addEventListener('click', () => updateService(service, { active: !service.active }));
+      actions.append(nameInput, prefixInput, descriptionInput, save, toggle);
+      row.append(label, actions);
+      list.append(row);
+    }
+  }
+
   function renderCounters() {
     const serviceSelect = element('counter-service');
     serviceSelect.replaceChildren();
-    for (const service of services) addOption(serviceSelect, service.id, service.name);
+    for (const service of services.filter(item => item.active)) addOption(serviceSelect, service.id, service.name);
+    element('counter-form').querySelector('button[type="submit"]').disabled = !services.some(service => service.active);
 
     const employeeCounter = element('employee-counter');
     employeeCounter.replaceChildren();
@@ -76,7 +135,11 @@
       actions.className = 'admin-row-actions';
       const area = document.createElement('select');
       area.setAttribute('aria-label', `Área do ${counter.name}`);
-      for (const service of services) addOption(area, service.id, service.name);
+      for (const service of services.filter(item => item.active)) addOption(area, service.id, service.name);
+      const assignedService = services.find(service => service.id === counter.service_id);
+      if (assignedService && !assignedService.active) {
+        addOption(area, assignedService.id, `${assignedService.name} · Inativa`);
+      }
       area.value = counter.service_id;
       area.addEventListener('change', () => updateCounter(counter, { service_id: area.value }));
       const toggle = document.createElement('button');
@@ -132,7 +195,7 @@
 
   async function loadData() {
     const [serviceRows, counterRows, employeeRows] = await Promise.all([
-      request('/rest/v1/services?select=id,name&active=eq.true&order=position.asc'),
+      request('/rest/v1/services?select=id,name,prefix,description,active,position&order=position.asc'),
       request('/rest/v1/counters?select=id,name,service_id,active,services(name)&order=name.asc'),
       request('/rest/v1/profiles?select=id,full_name,active,counter_id&role=eq.attendant&order=full_name.asc')
     ]);
@@ -142,8 +205,23 @@
       service_name: Array.isArray(counter.services) ? counter.services[0]?.name : counter.services?.name
     }));
     employees = employeeRows;
+    renderAreas();
     renderCounters();
     renderEmployees();
+  }
+
+  async function updateService(service, changes) {
+    if (changes.active === false && counters.some(counter => counter.service_id === service.id && counter.active)) {
+      setText('area-message', 'Reatribui ou desativa os balcões desta área antes de a desativar.');
+      return;
+    }
+    try {
+      await request(`/rest/v1/services?id=eq.${encodeURIComponent(service.id)}`, { method: 'PATCH', body: changes });
+      setText('area-message', 'Área atualizada.');
+      await loadData();
+    } catch (error) {
+      setText('area-message', error.message);
+    }
   }
 
   async function updateCounter(counter, changes) {
@@ -218,6 +296,24 @@
       await loadData();
     } catch (error) {
       setText('counter-message', error.message);
+    }
+  });
+
+  element('area-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fields = Object.fromEntries(new FormData(form));
+    fields.name = fields.name.trim();
+    fields.prefix = fields.prefix.trim().toUpperCase();
+    fields.description = fields.description.trim();
+    fields.position = Math.max(0, ...services.map(service => service.position || 0)) + 1;
+    try {
+      await request('/rest/v1/services', { method: 'POST', body: fields });
+      form.reset();
+      setText('area-message', 'Área adicionada. Já está disponível no site.');
+      await loadData();
+    } catch (error) {
+      setText('area-message', error.message);
     }
   });
 

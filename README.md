@@ -16,7 +16,7 @@ Abre `funcionarios.html` ou usa a ligação **Funcionários** na navegação pú
 
 ## Portal de administração
 
-Abre `admin.html` e entra com um perfil ativo de administrador. A página permite criar balcões, alterar a área de cada balcão, ativar/desativar balcões, criar contas de funcionários e atribuir cada funcionário a um balcão. A criação de contas usa o registo de utilizadores do Supabase; ativa **Authentication → Sign In / Providers → Email** no projeto. Se a confirmação de email estiver ativa, o funcionário terá de confirmar o endereço antes de entrar.
+Abre `admin.html` e entra com um perfil ativo de administrador. A página permite criar e personalizar áreas (nome, prefixo e descrição), criar balcões associados a uma área, ativar/desativar balcões, criar contas de funcionários e atribuir cada funcionário a um balcão. As áreas ativas aparecem automaticamente em **Retirar senha** no site. A criação de contas usa o registo de utilizadores do Supabase; ativa **Authentication → Sign In / Providers → Email** no projeto. Se a confirmação de email estiver ativa, o funcionário terá de confirmar o endereço antes de entrar.
 
 ## Backend online com Supabase
 

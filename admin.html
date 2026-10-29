@@ -34,8 +34,23 @@
       <div class="section-heading">
         <p class="eyebrow">Gestão do sistema</p>
         <div class="staff-heading-row"><h1 class="portal-title" id="admin-name">Administração</h1><button class="button button-outline" id="admin-logout" type="button">Terminar sessão</button></div>
-        <p>Configura as áreas de atendimento e as respetivas equipas.</p>
+        <p>Cria áreas de atendimento e associa-lhes balcões e funcionários.</p>
       </div>
+
+      <section class="admin-section">
+        <h2>Áreas</h2>
+        <form class="admin-form admin-area-form" id="area-form">
+          <label for="area-name">Nome da área</label>
+          <input id="area-name" name="name" maxlength="80" placeholder="Ex.: Recursos Humanos" required>
+          <label for="area-prefix">Prefixo das senhas</label>
+          <input id="area-prefix" name="prefix" maxlength="4" pattern="[A-Za-z0-9]{1,4}" placeholder="Ex.: RH" required>
+          <label for="area-description">Descrição</label>
+          <input id="area-description" name="description" maxlength="240" placeholder="Ex.: Contratos e assuntos de pessoal">
+          <button class="button button-primary" type="submit">Adicionar área</button>
+          <p class="action-message" id="area-message" aria-live="polite"></p>
+        </form>
+        <div class="admin-list" id="area-list" aria-live="polite"></div>
+      </section>
 
       <section class="admin-section">
         <h2>Balcões</h2>
