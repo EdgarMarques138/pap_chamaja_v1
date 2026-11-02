@@ -7,6 +7,7 @@
   let counters = [];
   let counterServices = [];
   let employees = [];
+  let supportsPriorityFeature = true;
 
   const element = id => document.getElementById(id);
   const setText = (id, value) => { element(id).textContent = value; };
@@ -110,6 +111,15 @@
   }
 
   function renderCounters() {
+    const priorityField = document.querySelector('#counter-priority')?.closest('.counter-priority-field');
+    if (priorityField) {
+      priorityField.hidden = !supportsPriorityFeature;
+    }
+    const priorityInput = document.getElementById('counter-priority');
+    if (priorityInput) {
+      priorityInput.disabled = !supportsPriorityFeature;
+    }
+
     const serviceSelect = element('counter-services');
     serviceSelect.replaceChildren();
     for (const service of services.filter(item => item.active)) addOption(serviceSelect, service.id, service.name);
@@ -220,11 +230,29 @@
   }
 
   async function loadData() {
-    const [serviceRows, counterRows, employeeRows] = await Promise.all([
-      request('/rest/v1/services?select=id,name,prefix,description,active,position&order=position.asc'),
-      request('/rest/v1/counters?select=id,name,service_id,active,priority_enabled,services(name)&order=name.asc'),
-      request('/rest/v1/profiles?select=id,full_name,active,counter_id&role=eq.attendant&order=full_name.asc')
-    ]);
+    let counterRows = [];
+    try {
+      counterRows = await request('/rest/v1/counters?select=id,name,service_id,active,priority_enabled,services(name)&order=name.asc');
+      supportsPriorityFeature = true;
+    } catch (error) {
+      if (!/priority_enabled|column.*does not exist|does not exist|not found|not exist/i.test(error.message || '')) {
+        throw error;
+      }
+      supportsPriorityFeature = false;
+      counterRows = await request('/rest/v1/counters?select=id,name,service_id,active,services(name)&order=name.asc');
+    }
+
+    let serviceRows = [];
+    try {
+      serviceRows = await request('/rest/v1/services?select=id,name,prefix,description,active,position&order=position.asc');
+    } catch (error) {
+      if (!/description|position|column.*does not exist|does not exist/i.test(error.message || '')) {
+        throw error;
+      }
+      serviceRows = await request('/rest/v1/services?select=id,name,prefix,active&order=name.asc');
+      serviceRows = serviceRows.map(service => ({ ...service, description: '', position: 0 }));
+    }
+    const employeeRows = await request('/rest/v1/profiles?select=id,full_name,active,counter_id&role=eq.attendant&order=full_name.asc');
     services = serviceRows;
     counterServices = [];
     let linkRows = [];
@@ -257,7 +285,7 @@
         service_id: counter.service_id || serviceIds[0] || null,
         service_ids: serviceIds,
         service_name: Array.isArray(counter.services) ? counter.services[0]?.name : counter.services?.name,
-        priority_enabled: Boolean(counter.priority_enabled)
+        priority_enabled: supportsPriorityFeature ? Boolean(counter.priority_enabled) : false
       };
     });
     employees = employeeRows;
@@ -281,6 +309,10 @@
   }
 
   async function updateCounter(counter, changes) {
+    if (changes.priority_enabled !== undefined && !supportsPriorityFeature) {
+      setText('counter-message', 'Atendimento prioritário não está disponível nesta base de dados.');
+      return;
+    }
     try {
       await request(`/rest/v1/counters?id=eq.${encodeURIComponent(counter.id)}`, { method: 'PATCH', body: changes });
       await loadData();
@@ -356,13 +388,16 @@
       return;
     }
     try {
+      const payload = {
+        name: trimmedName,
+        service_id: selectedServices[0]
+      };
+      if (supportsPriorityFeature) {
+        payload.priority_enabled = Boolean(form.querySelector('#counter-priority').checked);
+      }
       const created = await request('/rest/v1/counters', {
         method: 'POST',
-        body: {
-          name: trimmedName,
-          service_id: selectedServices[0],
-          priority_enabled: Boolean(form.querySelector('#counter-priority').checked)
-        }
+        body: payload
       });
       const createdCounter = Array.isArray(created) ? created[0] : created;
       try {

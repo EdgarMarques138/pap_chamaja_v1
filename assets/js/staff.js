@@ -112,12 +112,27 @@
 
   async function refreshQueue() {
     if (!profile) return;
-    const query = new URLSearchParams({
-      select: 'id,number,service_id,counter_id,state,created_at,called_at,priority,services(name),counters(name)',
+    const queryOptions = {
       order: 'created_at.desc',
       limit: '1000'
-    });
-    const result = await request(`/rest/v1/tickets?${query}`);
+    };
+    let result;
+    try {
+      const query = new URLSearchParams({
+        ...queryOptions,
+        select: 'id,number,service_id,counter_id,state,created_at,called_at,priority,services(name),counters(name)'
+      });
+      result = await request(`/rest/v1/tickets?${query}`);
+    } catch (error) {
+      if (!/priority|column.*does not exist|does not exist/i.test(error.message || '')) {
+        throw error;
+      }
+      const query = new URLSearchParams({
+        ...queryOptions,
+        select: 'id,number,service_id,counter_id,state,created_at,called_at,services(name),counters(name)'
+      });
+      result = await request(`/rest/v1/tickets?${query}`);
+    }
     const allowed = new Set(profile.service_ids || [profile.service_id]);
     tickets = result.map(ticket => ({
       ...ticket,
