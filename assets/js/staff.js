@@ -196,8 +196,15 @@
       if (!profiles.length) throw new Error('Esta conta não está autorizada como funcionário ativo.');
       const row = profiles[0];
       const counter = Array.isArray(row.counters) ? row.counters[0] : row.counters;
-      const counterLinks = await request(`/rest/v1/counter_services?select=service_id,services(name)&counter_id=eq.${row.counter_id}`);
-      const linkedServiceIds = [...new Set([counter?.service_id, ...counterLinks.map(link => link.service_id)])].filter(Boolean);
+      let linkedServiceIds = [counter?.service_id].filter(Boolean);
+      try {
+        const counterLinks = await request(`/rest/v1/counter_services?select=service_id,services(name)&counter_id=eq.${row.counter_id}`);
+        linkedServiceIds = [...new Set([...linkedServiceIds, ...counterLinks.map(link => link.service_id)])].filter(Boolean);
+      } catch (error) {
+        if (!/counter_services|does not exist|not found|not exist/i.test(error.message || '')) {
+          throw error;
+        }
+      }
       const service = Array.isArray(counter?.services) ? counter.services[0] : counter?.services;
       if (!row.counter_id || !counter || !linkedServiceIds.length || !service) {
         throw new Error('O balcão atribuído precisa de ter uma área válida.');

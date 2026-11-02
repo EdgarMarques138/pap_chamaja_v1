@@ -200,13 +200,22 @@
   }
 
   async function loadData() {
-    const [serviceRows, counterRows, linkRows, employeeRows] = await Promise.all([
+    const [serviceRows, counterRows, employeeRows] = await Promise.all([
       request('/rest/v1/services?select=id,name,prefix,description,active,position&order=position.asc'),
       request('/rest/v1/counters?select=id,name,service_id,active,services(name)&order=name.asc'),
-      request('/rest/v1/counter_services?select=counter_id,service_id,services(name)&order=counter_id.asc'),
       request('/rest/v1/profiles?select=id,full_name,active,counter_id&role=eq.attendant&order=full_name.asc')
     ]);
     services = serviceRows;
+    counterServices = [];
+    let linkRows = [];
+    try {
+      linkRows = await request('/rest/v1/counter_services?select=counter_id,service_id,services(name)&order=counter_id.asc');
+    } catch (error) {
+      if (!/counter_services|does not exist|not found|not exist/i.test(error.message || '')) {
+        throw error;
+      }
+      linkRows = [];
+    }
     counterServices = linkRows.map(link => ({
       counter_id: link.counter_id,
       service_id: link.service_id,
@@ -332,14 +341,20 @@
         }
       });
       const createdCounter = Array.isArray(created) ? created[0] : created;
-      for (const serviceId of selectedServices.slice(1)) {
-        await request('/rest/v1/counter_services', {
-          method: 'POST',
-          body: {
-            counter_id: createdCounter.id,
-            service_id: serviceId
-          }
-        });
+      try {
+        for (const serviceId of selectedServices.slice(1)) {
+          await request('/rest/v1/counter_services', {
+            method: 'POST',
+            body: {
+              counter_id: createdCounter.id,
+              service_id: serviceId
+            }
+          });
+        }
+      } catch (error) {
+        if (!/counter_services|does not exist|not found|not exist/i.test(error.message || '')) {
+          throw error;
+        }
       }
       form.reset();
       setText('counter-message', 'Balcão adicionado com as áreas selecionadas.');
