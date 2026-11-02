@@ -239,7 +239,7 @@
         throw error;
       }
       supportsPriorityFeature = false;
-      counterRows = await request('/rest/v1/counters?select=id,name,service_id,active,services(name)&order=name.asc');
+      counterRows = await request('/rest/v1/counters?select=id,name,service_id,active&order=name.asc');
     }
 
     let serviceRows = [];
@@ -284,7 +284,8 @@
         ...counter,
         service_id: counter.service_id || serviceIds[0] || null,
         service_ids: serviceIds,
-        service_name: Array.isArray(counter.services) ? counter.services[0]?.name : counter.services?.name,
+        service_name: (Array.isArray(counter.services) ? counter.services[0]?.name : counter.services?.name)
+          || services.find(service => service.id === (counter.service_id || serviceIds[0]))?.name,
         priority_enabled: supportsPriorityFeature ? Boolean(counter.priority_enabled) : false
       };
     });
