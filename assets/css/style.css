@@ -40,7 +40,17 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--orange); outlin
 .brand-mark { display: grid; width: 38px; aspect-ratio: 1; place-items: center; border-radius: 8px; color: white; background: var(--teal); font-size: 13px; }
 .main-nav { display: flex; flex: 1; align-items: center; justify-content: space-evenly; gap: 4px; }
 .nav-button, .text-button { border: 0; color: var(--muted); background: transparent; cursor: pointer; }
-.nav-button { min-height: 42px; padding: 0 13px; border-radius: 6px; text-decoration: none; }
+.nav-button {
+  min-height: 42px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  line-height: 1.2;
+  text-decoration: none;
+  vertical-align: middle;
+}
 .nav-button:hover, .nav-button.active { color: var(--teal-dark); background: #e4ebe4; }
 
 .page-shell { width: min(1120px, calc(100% - 48px)); min-height: calc(100vh - 130px); margin: 0 auto; padding: 62px 0 48px; }
@@ -133,6 +143,40 @@ h1 span { color: var(--teal); font-style: italic; }
 .admin-form label { color: var(--ink); font-size: 14px; font-weight: 700; }
 .admin-form input, .admin-form select, .admin-row select { width: 100%; min-width: 0; min-height: 44px; padding: 0 10px; border: 1px solid #aebdb6; border-radius: 5px; color: var(--ink); background: white; font: inherit; }
 .admin-form .button, .admin-form .action-message { grid-column: 2 / -1; }
+#counter-form {
+  width: min(100%, 980px);
+  grid-template-columns: minmax(160px, 1.2fr) minmax(0, 2.6fr) minmax(90px, .8fr) minmax(0, 1.8fr);
+  gap: 14px 16px;
+  align-items: center;
+}
+#counter-form label:nth-of-type(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+#counter-form #counter-name {
+  grid-column: 2;
+  grid-row: 1;
+}
+#counter-form label:nth-of-type(2) {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: start;
+}
+#counter-form #counter-service {
+  grid-column: 1 / span 2;
+  grid-row: 2;
+}
+#counter-form .button {
+  grid-column: 3 / -1;
+  grid-row: 2;
+  width: 100%;
+  min-height: 52px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+#counter-form .action-message {
+  grid-column: 1 / -1;
+}
 .admin-employee-form { grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 14px; }
 .admin-employee-form .form-field { min-width: 0; display: flex; flex-direction: column; gap: 7px; }
 .admin-employee-form .form-field label { margin: 0; }
@@ -172,6 +216,18 @@ h1 span { color: var(--teal); font-style: italic; }
   .current-box { min-height: 265px; }
   .staff-heading-row { align-items: flex-start; flex-direction: column; gap: 0; }
   .admin-form, .admin-employee-form { grid-template-columns: 1fr; }
+  #counter-form {
+    grid-template-columns: 1fr;
+  }
+  #counter-form label:nth-of-type(1),
+  #counter-form #counter-name,
+  #counter-form label:nth-of-type(2),
+  #counter-form #counter-service,
+  #counter-form .button,
+  #counter-form .action-message {
+    grid-column: 1;
+    grid-row: auto;
+  }
   .admin-area-form { grid-template-columns: 1fr; }
   .admin-area-form .area-prefix-field { grid-column: 1; }
   .admin-area-form .area-description-field { grid-column: 1 / -1; }
