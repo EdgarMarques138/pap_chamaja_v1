@@ -135,7 +135,7 @@
       name.textContent = counter.name;
       const detail = document.createElement('span');
       const assigned = counter.service_ids?.length ? counter.service_ids.map(id => services.find(service => service.id === id)?.name || 'Área').join(', ') : (counter.service_name || 'Sem área');
-      detail.textContent = `${assigned} · ${counter.active ? 'Ativo' : 'Inativo'}${counter.priority_enabled ? ' · Prioridade' : ''}`;
+      detail.textContent = `${assigned} · ${counter.active ? 'Ativo' : 'Inativo'}`;
       label.append(name, detail);
       const actions = document.createElement('div');
       actions.className = 'admin-row-actions';
@@ -324,28 +324,13 @@
       return;
     }
     try {
-      let created;
-      try {
-        created = await request('/rest/v1/counters', {
-          method: 'POST',
-          body: {
-            name: trimmedName,
-            service_id: selectedServices[0],
-            priority_enabled: Boolean(fields.priority_enabled)
-          }
-        });
-      } catch (error) {
-        if (!/priority_enabled|does not exist/i.test(error.message || '')) {
-          throw error;
+      const created = await request('/rest/v1/counters', {
+        method: 'POST',
+        body: {
+          name: trimmedName,
+          service_id: selectedServices[0]
         }
-        created = await request('/rest/v1/counters', {
-          method: 'POST',
-          body: {
-            name: trimmedName,
-            service_id: selectedServices[0]
-          }
-        });
-      }
+      });
       const createdCounter = Array.isArray(created) ? created[0] : created;
       for (const serviceId of selectedServices.slice(1)) {
         await request('/rest/v1/counter_services', {
