@@ -133,6 +133,12 @@
       return backendRequest(`/rest/v1/rpc/${name}`, { method: 'POST', body: parameters });
     }
 
+    function waitingTicketsForService(serviceId) {
+      return data.tickets
+        .filter(ticket => ticket.serviceId === serviceId && ticket.state === 'waiting')
+        .sort((a, b) => Number(Boolean(b.priority)) - Number(Boolean(a.priority)) || a.createdAt - b.createdAt);
+    }
+
     function mapRemoteTicket(ticket) {
       const serviceId = ticket.service_id;
       const serviceRelation = Array.isArray(ticket.services) ? ticket.services[0] : ticket.services;
@@ -144,6 +150,7 @@
         serviceId,
         serviceName: serviceRelation?.name || service?.name || 'Serviço',
         state: ticket.state,
+        priority: Boolean(ticket.priority),
         createdAt: Date.parse(ticket.created_at),
         updatedAt: Date.parse(ticket.updated_at),
         calledAt: ticket.called_at ? Date.parse(ticket.called_at) : null,
@@ -156,7 +163,7 @@
     async function refreshRemoteData() {
       const remoteServices = await backendRequest('/rest/v1/services?select=id,name,prefix,description,active&active=eq.true&order=position.asc');
       services = remoteServices;
-      const remoteTickets = await backendRequest('/rest/v1/tickets?select=id,number,service_id,counter_id,attendant_id,state,created_at,updated_at,called_at,services(name),counters(name)&order=created_at.desc&limit=250');
+      const remoteTickets = await backendRequest('/rest/v1/tickets?select=id,number,service_id,counter_id,attendant_id,state,priority,created_at,updated_at,called_at,services(name),counters(name)&order=created_at.desc&limit=250');
       data = { tickets: remoteTickets.map(mapRemoteTicket) };
       render();
       setText('connection-status', 'Fila online: dados partilhados entre dispositivos.');
@@ -201,7 +208,7 @@
       const list = document.getElementById('service-list');
       list.replaceChildren();
       for (const service of services) {
-        const waiting = data.tickets.filter(ticket => ticket.serviceId === service.id && ticket.state === 'waiting').length;
+        const waiting = waitingTicketsForService(service.id).length;
         const button = document.createElement('button');
         button.className = 'service-card';
         button.type = 'button';
@@ -286,7 +293,7 @@
         if (!service) return;
         const priority = document.getElementById('priority-ticket').checked;
         if (backendEnabled) {
-          const ahead = data.tickets.filter(item => item.serviceId === service.id && item.state === 'waiting').length;
+          const ahead = waitingTicketsForService(service.id).length;
           try {
             let result;
             try {
@@ -310,8 +317,8 @@
           }
           return;
         }
-        const previous = data.tickets.filter(ticket => ticket.serviceId === service.id)
-          .reduce((max, ticket) => Math.max(max, Number(ticket.number.slice(service.prefix.length)) || 0), 0);
+        const waitingInService = waitingTicketsForService(service.id);
+        const previous = waitingInService.reduce((max, ticket) => Math.max(max, Number(String(ticket.number).slice(service.prefix.length)) || 0), 0);
         const ticket = {
           id: `${Date.now()}-${Math.random()}`,
           number: service.prefix + String(previous + 1).padStart(3, '0'),
@@ -326,7 +333,7 @@
         data.tickets.push(ticket);
         lastIssued = ticket;
         setText('ticket-number', ticket.number);
-        const ahead = data.tickets.filter(item => item.serviceId === service.id && item.state === 'waiting' && item.createdAt < ticket.createdAt).length;
+        const ahead = waitingTicketsForService(service.id).filter(item => item.createdAt < ticket.createdAt || (item.priority && !ticket.priority)).length;
         setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
         document.getElementById('ticket-result').hidden = false;
         saveData();
