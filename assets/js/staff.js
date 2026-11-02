@@ -198,6 +198,7 @@
       const counter = Array.isArray(row.counters) ? row.counters[0] : row.counters;
       let linkedServiceIds = [counter?.service_id].filter(Boolean);
       try {
+        await request(`/rest/v1/counter_services?select=id&limit=1`);
         const counterLinks = await request(`/rest/v1/counter_services?select=service_id,services(name)&counter_id=eq.${row.counter_id}`);
         linkedServiceIds = [...new Set([...linkedServiceIds, ...counterLinks.map(link => link.service_id)])].filter(Boolean);
       } catch (error) {

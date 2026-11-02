@@ -20,6 +20,15 @@
     };
   }
 
+  async function hasTable(tableName) {
+    try {
+      await request(`/rest/v1/${tableName}?select=id&limit=1`);
+      return true;
+    } catch (error) {
+      return !/does not exist|not found|not exist|could not find the table/i.test(error.message || '');
+    }
+  }
+
   async function request(path, options = {}) {
     const response = await fetch(`${backendUrl}${path}`, {
       method: options.method || 'GET',
@@ -135,7 +144,7 @@
       name.textContent = counter.name;
       const detail = document.createElement('span');
       const assigned = counter.service_ids?.length ? counter.service_ids.map(id => services.find(service => service.id === id)?.name || 'Área').join(', ') : (counter.service_name || 'Sem área');
-      detail.textContent = `${assigned} · ${counter.active ? 'Ativo' : 'Inativo'}`;
+      detail.textContent = `${assigned} · ${counter.active ? 'Ativo' : 'Inativo'}${counter.priority_enabled ? ' · Prioridade' : ''}`;
       label.append(name, detail);
       const actions = document.createElement('div');
       actions.className = 'admin-row-actions';
@@ -148,12 +157,23 @@
       }
       area.value = counter.service_id;
       area.addEventListener('change', () => updateCounter(counter, { service_id: area.value }));
+
+      const priorityToggle = document.createElement('label');
+      priorityToggle.className = 'counter-priority-field';
+      const priorityCheckbox = document.createElement('input');
+      priorityCheckbox.type = 'checkbox';
+      priorityCheckbox.checked = Boolean(counter.priority_enabled);
+      priorityCheckbox.addEventListener('change', () => updateCounter(counter, { priority_enabled: priorityCheckbox.checked }));
+      const priorityLabel = document.createElement('span');
+      priorityLabel.textContent = 'Prioridade';
+      priorityToggle.append(priorityCheckbox, priorityLabel);
+
       const toggle = document.createElement('button');
       toggle.className = 'button button-outline';
       toggle.type = 'button';
       toggle.textContent = counter.active ? 'Desativar' : 'Ativar';
       toggle.addEventListener('click', () => updateCounter(counter, { active: !counter.active }));
-      actions.append(area, toggle);
+      actions.append(area, priorityToggle, toggle);
       row.append(label, actions);
       list.append(row);
     }
@@ -202,19 +222,21 @@
   async function loadData() {
     const [serviceRows, counterRows, employeeRows] = await Promise.all([
       request('/rest/v1/services?select=id,name,prefix,description,active,position&order=position.asc'),
-      request('/rest/v1/counters?select=id,name,service_id,active,services(name)&order=name.asc'),
+      request('/rest/v1/counters?select=id,name,service_id,active,priority_enabled,services(name)&order=name.asc'),
       request('/rest/v1/profiles?select=id,full_name,active,counter_id&role=eq.attendant&order=full_name.asc')
     ]);
     services = serviceRows;
     counterServices = [];
     let linkRows = [];
-    try {
-      linkRows = await request('/rest/v1/counter_services?select=counter_id,service_id,services(name)&order=counter_id.asc');
-    } catch (error) {
-      if (!/counter_services|does not exist|not found|not exist/i.test(error.message || '')) {
-        throw error;
+    if (await hasTable('counter_services')) {
+      try {
+        linkRows = await request('/rest/v1/counter_services?select=counter_id,service_id,services(name)&order=counter_id.asc');
+      } catch (error) {
+        if (!/counter_services|does not exist|not found|not exist/i.test(error.message || '')) {
+          throw error;
+        }
+        linkRows = [];
       }
-      linkRows = [];
     }
     counterServices = linkRows.map(link => ({
       counter_id: link.counter_id,
@@ -234,7 +256,8 @@
         ...counter,
         service_id: counter.service_id || serviceIds[0] || null,
         service_ids: serviceIds,
-        service_name: Array.isArray(counter.services) ? counter.services[0]?.name : counter.services?.name
+        service_name: Array.isArray(counter.services) ? counter.services[0]?.name : counter.services?.name,
+        priority_enabled: Boolean(counter.priority_enabled)
       };
     });
     employees = employeeRows;
@@ -337,7 +360,8 @@
         method: 'POST',
         body: {
           name: trimmedName,
-          service_id: selectedServices[0]
+          service_id: selectedServices[0],
+          priority_enabled: Boolean(form.querySelector('#counter-priority').checked)
         }
       });
       const createdCounter = Array.isArray(created) ? created[0] : created;
