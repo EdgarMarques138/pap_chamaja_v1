@@ -65,8 +65,12 @@
         <form class="admin-form" id="counter-form">
           <label for="counter-name">Nome do balcão</label>
           <input id="counter-name" name="name" maxlength="80" placeholder="Ex.: Balcão 5" required>
-          <label for="counter-service">Área</label>
-          <select id="counter-service" name="service_id" required></select>
+          <label for="counter-services">Áreas</label>
+          <select id="counter-services" name="service_ids" multiple size="4" required></select>
+          <label class="counter-priority-field" for="counter-priority">
+            <input id="counter-priority" name="priority_enabled" type="checkbox" value="true">
+            <span>Permitir atendimento prioritário</span>
+          </label>
           <button class="button button-primary" type="submit">Adicionar balcão</button>
           <p class="action-message" id="counter-message" aria-live="polite"></p>
         </form>

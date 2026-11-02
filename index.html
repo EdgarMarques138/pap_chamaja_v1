@@ -53,6 +53,10 @@
         <h2>Que serviço procura?</h2>
         <p>Selecione um serviço para entrar na fila.</p>
       </div>
+      <label class="priority-toggle" for="priority-ticket">
+        <input id="priority-ticket" type="checkbox">
+        <span>Atendimento prioritário</span>
+      </label>
       <div class="service-grid" id="service-list"></div>
       <div class="ticket-result" id="ticket-result" aria-live="polite" hidden>
         <p class="eyebrow">Senha emitida</p>
@@ -280,14 +284,15 @@
       if (serviceButton) {
         const service = services.find(item => item.id === serviceButton.dataset.service);
         if (!service) return;
+        const priority = document.getElementById('priority-ticket').checked;
         if (backendEnabled) {
           const ahead = data.tickets.filter(item => item.serviceId === service.id && item.state === 'waiting').length;
           try {
-            const result = await backendRpc('emit_ticket', { p_service_id: service.id });
+            const result = await backendRpc('emit_ticket', { p_service_id: service.id, p_priority: priority });
             const remoteTicket = Array.isArray(result) ? result[0] : result;
             lastIssued = mapRemoteTicket(remoteTicket);
             setText('ticket-number', lastIssued.number);
-            setText('ticket-detail', `${service.name} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
+            setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
             document.getElementById('ticket-result').hidden = false;
             await refreshRemoteData();
           } catch (error) {
@@ -305,6 +310,7 @@
           serviceId: service.id,
           serviceName: service.name,
           state: 'waiting',
+          priority,
           createdAt: Date.now(),
           updatedAt: Date.now(),
           calledAt: null
@@ -313,7 +319,7 @@
         lastIssued = ticket;
         setText('ticket-number', ticket.number);
         const ahead = data.tickets.filter(item => item.serviceId === service.id && item.state === 'waiting' && item.createdAt < ticket.createdAt).length;
-        setText('ticket-detail', `${service.name} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
+        setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
         document.getElementById('ticket-result').hidden = false;
         saveData();
         return;

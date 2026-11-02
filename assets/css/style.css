@@ -61,6 +61,8 @@ h1 { margin-bottom: 20px; font-family: Georgia, "Times New Roman", serif; font-s
 h1 span { color: var(--teal); font-style: italic; }
 .intro { max-width: 530px; margin-bottom: 26px; color: var(--muted); font-size: 18px; line-height: 1.6; }
 .home-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.priority-toggle { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 18px; color: var(--ink); font-weight: 700; }
+.priority-toggle input { width: 16px; height: 16px; }
 .button { min-height: 46px; padding: 0 18px; border: 1px solid transparent; border-radius: 6px; font-weight: 700; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease; }
 .button:hover:not(:disabled) { transform: translateY(-1px); }
 .button:disabled { opacity: .46; cursor: not-allowed; }
@@ -162,13 +164,30 @@ h1 span { color: var(--teal); font-style: italic; }
   grid-row: 1;
   justify-self: start;
 }
-#counter-form #counter-service {
+#counter-form #counter-services {
   grid-column: 1 / span 2;
   grid-row: 2;
+  min-height: 120px;
 }
-#counter-form .button {
+#counter-form .counter-priority-field {
   grid-column: 3 / -1;
   grid-row: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 10px;
+  border: 1px solid #aebdb6;
+  border-radius: 5px;
+  background: white;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+#counter-form .counter-priority-field input { width: 16px; height: 16px; }
+#counter-form .button {
+  grid-column: 3 / -1;
+  grid-row: 3;
   width: 100%;
   min-height: 52px;
   font-size: 1.1rem;

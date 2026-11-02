@@ -5,6 +5,7 @@
   let accessToken = '';
   let services = [];
   let counters = [];
+  let counterServices = [];
   let employees = [];
 
   const element = id => document.getElementById(id);
@@ -100,7 +101,7 @@
   }
 
   function renderCounters() {
-    const serviceSelect = element('counter-service');
+    const serviceSelect = element('counter-services');
     serviceSelect.replaceChildren();
     for (const service of services.filter(item => item.active)) addOption(serviceSelect, service.id, service.name);
     element('counter-form').querySelector('button[type="submit"]').disabled = !services.some(service => service.active);
@@ -109,7 +110,11 @@
     employeeCounter.replaceChildren();
     const activeCounters = counters.filter(counter => counter.active);
     for (const counter of activeCounters) {
-      addOption(employeeCounter, counter.id, `${counter.name} · ${counter.service_name}`);
+      const serviceLabel = (counter.service_ids?.length ? counter.service_ids.map(id => {
+        const found = services.find(item => item.id === id);
+        return found ? found.name : id;
+      }).join(', ') : counter.service_name || 'Sem área');
+      addOption(employeeCounter, counter.id, `${counter.name} · ${serviceLabel}`);
     }
     element('employee-submit').disabled = activeCounters.length === 0;
 
@@ -129,7 +134,8 @@
       const name = document.createElement('strong');
       name.textContent = counter.name;
       const detail = document.createElement('span');
-      detail.textContent = `${counter.service_name} · ${counter.active ? 'Ativo' : 'Inativo'}`;
+      const assigned = counter.service_ids?.length ? counter.service_ids.map(id => services.find(service => service.id === id)?.name || 'Área').join(', ') : (counter.service_name || 'Sem área');
+      detail.textContent = `${assigned} · ${counter.active ? 'Ativo' : 'Inativo'}${counter.priority_enabled ? ' · Prioridade' : ''}`;
       label.append(name, detail);
       const actions = document.createElement('div');
       actions.className = 'admin-row-actions';
@@ -194,16 +200,34 @@
   }
 
   async function loadData() {
-    const [serviceRows, counterRows, employeeRows] = await Promise.all([
+    const [serviceRows, counterRows, linkRows, employeeRows] = await Promise.all([
       request('/rest/v1/services?select=id,name,prefix,description,active,position&order=position.asc'),
-      request('/rest/v1/counters?select=id,name,service_id,active,services(name)&order=name.asc'),
+      request('/rest/v1/counters?select=id,name,service_id,active,priority_enabled,services(name)&order=name.asc'),
+      request('/rest/v1/counter_services?select=counter_id,service_id,services(name)&order=counter_id.asc'),
       request('/rest/v1/profiles?select=id,full_name,active,counter_id&role=eq.attendant&order=full_name.asc')
     ]);
     services = serviceRows;
-    counters = counterRows.map(counter => ({
-      ...counter,
-      service_name: Array.isArray(counter.services) ? counter.services[0]?.name : counter.services?.name
+    counterServices = linkRows.map(link => ({
+      counter_id: link.counter_id,
+      service_id: link.service_id,
+      name: Array.isArray(link.services) ? link.services[0]?.name : link.services?.name
     }));
+    const linkedByCounter = new Map();
+    for (const link of counterServices) {
+      const current = linkedByCounter.get(link.counter_id) || [];
+      current.push(link.service_id);
+      linkedByCounter.set(link.counter_id, current);
+    }
+    counters = counterRows.map(counter => {
+      const linked = linkedByCounter.get(counter.id) || [];
+      const serviceIds = [...new Set([...(counter?.service_id ? [counter.service_id] : []), ...linked])];
+      return {
+        ...counter,
+        service_id: counter.service_id || serviceIds[0] || null,
+        service_ids: serviceIds,
+        service_name: Array.isArray(counter.services) ? counter.services[0]?.name : counter.services?.name
+      };
+    });
     employees = employeeRows;
     renderAreas();
     renderCounters();
@@ -288,11 +312,38 @@
   element('counter-form').addEventListener('submit', async event => {
     event.preventDefault();
     const form = event.currentTarget;
+    const selectedServices = [...element('counter-services').selectedOptions].map(option => option.value);
     const fields = Object.fromEntries(new FormData(form));
+    const trimmedName = String(fields.name || '').trim();
+    if (!trimmedName) {
+      setText('counter-message', 'Indica um nome para o balcão.');
+      return;
+    }
+    if (!selectedServices.length) {
+      setText('counter-message', 'Seleciona pelo menos uma área para este balcão.');
+      return;
+    }
     try {
-      await request('/rest/v1/counters', { method: 'POST', body: fields });
+      const created = await request('/rest/v1/counters', {
+        method: 'POST',
+        body: {
+          name: trimmedName,
+          service_id: selectedServices[0],
+          priority_enabled: Boolean(fields.priority_enabled)
+        }
+      });
+      const createdCounter = Array.isArray(created) ? created[0] : created;
+      for (const serviceId of selectedServices.slice(1)) {
+        await request('/rest/v1/counter_services', {
+          method: 'POST',
+          body: {
+            counter_id: createdCounter.id,
+            service_id: serviceId
+          }
+        });
+      }
       form.reset();
-      setText('counter-message', 'Balcão adicionado.');
+      setText('counter-message', 'Balcão adicionado com as áreas selecionadas.');
       await loadData();
     } catch (error) {
       setText('counter-message', error.message);

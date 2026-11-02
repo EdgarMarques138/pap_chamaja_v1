@@ -38,13 +38,15 @@
   }
 
   function currentTicket() {
-    return tickets.find(ticket => ticket.counter_id === profile.counter_id && ['called', 'serving'].includes(ticket.state)) || null;
+    const allowed = new Set(profile?.service_ids || [profile?.service_id]);
+    return tickets.find(ticket => ticket.counter_id === profile.counter_id && allowed.has(ticket.service_id) && ['called', 'serving'].includes(ticket.state)) || null;
   }
 
   function render() {
     if (!profile) return;
     const active = currentTicket();
-    const waiting = tickets.filter(ticket => ticket.state === 'waiting' && ticket.service_id === profile.service_id).length;
+    const allowed = new Set(profile.service_ids || [profile.service_id]);
+    const waiting = tickets.filter(ticket => ticket.state === 'waiting' && allowed.has(ticket.service_id)).length;
     setText('staff-name', profile.full_name);
     setText('staff-assignment', `${profile.service_name} · ${profile.counter_name}`);
     setText('current-ticket', active?.number || '---');
@@ -84,7 +86,7 @@
       const row = document.createElement('tr');
       const values = [
         ticket.number,
-        ticket.service_name || 'Serviço',
+        `${ticket.service_name || 'Serviço'}${ticket.priority ? ' · Prioridade' : ''}`,
         ({ waiting: 'Em espera', called: 'Chamada', serving: 'Em atendimento', done: 'Concluída', absent: 'Ausente' })[ticket.state] || ticket.state,
         new Date(ticket.created_at).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' }),
         ticket.counter_name || '—'
@@ -111,17 +113,18 @@
   async function refreshQueue() {
     if (!profile) return;
     const query = new URLSearchParams({
-      select: 'id,number,service_id,counter_id,state,created_at,called_at,services(name),counters(name)',
+      select: 'id,number,service_id,counter_id,state,created_at,called_at,priority,services(name),counters(name)',
       order: 'created_at.desc',
       limit: '1000'
     });
     const result = await request(`/rest/v1/tickets?${query}`);
+    const allowed = new Set(profile.service_ids || [profile.service_id]);
     tickets = result.map(ticket => ({
       ...ticket,
       service_name: Array.isArray(ticket.services) ? ticket.services[0]?.name : ticket.services?.name,
       counter_name: Array.isArray(ticket.counters) ? ticket.counters[0]?.name : ticket.counters?.name
     })).filter(ticket => (
-      (ticket.state === 'waiting' && ticket.service_id === profile.service_id)
+      (ticket.state === 'waiting' && allowed.has(ticket.service_id))
       || ticket.counter_id === profile.counter_id
     ));
     render();
@@ -184,7 +187,7 @@
       if (!authResponse.ok) throw new Error(auth.msg || auth.message || 'Email ou palavra-passe inválidos.');
       accessToken = auth.access_token;
       const query = new URLSearchParams({
-        select: 'id,full_name,role,service_id,counter_id,active,counters(name,service_id,services(name))',
+        select: 'id,full_name,role,service_id,counter_id,active,counters(name,service_id,priority_enabled,services(name))',
         id: `eq.${auth.user.id}`,
         active: 'eq.true',
         role: 'eq.attendant'
@@ -193,11 +196,19 @@
       if (!profiles.length) throw new Error('Esta conta não está autorizada como funcionário ativo.');
       const row = profiles[0];
       const counter = Array.isArray(row.counters) ? row.counters[0] : row.counters;
+      const counterLinks = await request(`/rest/v1/counter_services?select=service_id,services(name)&counter_id=eq.${row.counter_id}`);
+      const linkedServiceIds = [...new Set([counter?.service_id, ...counterLinks.map(link => link.service_id)])].filter(Boolean);
       const service = Array.isArray(counter?.services) ? counter.services[0] : counter?.services;
-      if (!row.counter_id || !counter || !counter.service_id || !service) {
+      if (!row.counter_id || !counter || !linkedServiceIds.length || !service) {
         throw new Error('O balcão atribuído precisa de ter uma área válida.');
       }
-      profile = { ...row, service_id: counter.service_id, service_name: service.name, counter_name: counter.name };
+      profile = {
+        ...row,
+        service_id: counter.service_id || linkedServiceIds[0],
+        service_ids: linkedServiceIds,
+        service_name: service.name,
+        counter_name: counter.name
+      };
       setText('login-message', '');
       setText('action-message', 'Sessão iniciada.');
       showStaff();

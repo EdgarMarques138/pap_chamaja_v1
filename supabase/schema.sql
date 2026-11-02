@@ -11,11 +11,28 @@ create table if not exists public.counters (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
   service_id uuid references public.services(id) on delete restrict,
-  active boolean not null default true
+  active boolean not null default true,
+  priority_enabled boolean not null default false
+);
+
+create table if not exists public.counter_services (
+  id uuid primary key default gen_random_uuid(),
+  counter_id uuid not null references public.counters(id) on delete cascade,
+  service_id uuid not null references public.services(id) on delete cascade,
+  unique (counter_id, service_id)
 );
 
 alter table public.counters
   add column if not exists service_id uuid references public.services(id) on delete restrict;
+
+alter table public.counters
+  add column if not exists priority_enabled boolean not null default false;
+
+alter table public.services
+  add column if not exists priority_enabled boolean not null default false;
+
+alter table public.tickets
+  add column if not exists priority boolean not null default false;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -221,7 +238,7 @@ grant insert, update, delete on public.services, public.counters, public.profile
 revoke all on public.ticket_sequences from anon, authenticated;
 revoke insert, update, delete on public.tickets from anon, authenticated;
 
-create or replace function public.emit_ticket(p_service_id uuid)
+create or replace function public.emit_ticket(p_service_id uuid, p_priority boolean default false)
 returns public.tickets
 language plpgsql
 security definer
@@ -245,8 +262,8 @@ begin
     set last_number = public.ticket_sequences.last_number + 1
   returning last_number into v_number;
 
-  insert into public.tickets (ticket_day, number, service_id)
-  values (v_day, v_service.prefix || lpad(v_number::text, 3, '0'), v_service.id)
+  insert into public.tickets (ticket_day, number, service_id, priority)
+  values (v_day, v_service.prefix || lpad(v_number::text, 3, '0'), v_service.id, p_priority)
   returning * into v_ticket;
   return v_ticket;
 end;
@@ -285,8 +302,12 @@ begin
 
   select * into v_ticket from public.tickets
   where state = 'waiting'
-    and service_id = v_counter.service_id
-  order by created_at, id
+    and service_id in (
+      select service_id from public.counter_services where counter_id = v_profile.counter_id
+      union
+      select v_counter.service_id where v_counter.service_id is not null
+    )
+  order by priority desc, created_at, id
   limit 1
   for update skip locked;
   if not found then
@@ -342,7 +363,12 @@ begin
   where id = p_ticket_id for update;
   if not found
     or v_ticket.counter_id is distinct from v_profile.counter_id
-    or v_ticket.service_id <> v_counter.service_id
+    or not exists (
+      select 1
+      from public.counter_services cs
+      where cs.counter_id = v_profile.counter_id and cs.service_id = v_ticket.service_id
+    )
+    and v_ticket.service_id is distinct from v_counter.service_id
   then
     raise exception 'Senha não encontrada no balcão atribuído.' using errcode = '42501';
   end if;
@@ -366,12 +392,12 @@ $$;
 revoke all on function public.is_active_staff() from public, anon;
 revoke all on function public.is_admin() from public, anon;
 revoke all on function public.sync_counter_service_to_profiles() from public, anon, authenticated;
-revoke all on function public.emit_ticket(uuid) from public;
+revoke all on function public.emit_ticket(uuid, boolean) from public;
 revoke all on function public.call_next_ticket() from public, anon;
 revoke all on function public.advance_ticket(uuid, text) from public, anon;
 grant execute on function public.is_active_staff() to authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
-grant execute on function public.emit_ticket(uuid) to anon, authenticated;
+grant execute on function public.emit_ticket(uuid, boolean) to anon, authenticated;
 grant execute on function public.call_next_ticket(), public.advance_ticket(uuid, text) to authenticated;
 
 notify pgrst, 'reload schema';
