@@ -202,7 +202,7 @@
   async function loadData() {
     const [serviceRows, counterRows, linkRows, employeeRows] = await Promise.all([
       request('/rest/v1/services?select=id,name,prefix,description,active,position&order=position.asc'),
-      request('/rest/v1/counters?select=id,name,service_id,active,priority_enabled,services(name)&order=name.asc'),
+      request('/rest/v1/counters?select=id,name,service_id,active,services(name)&order=name.asc'),
       request('/rest/v1/counter_services?select=counter_id,service_id,services(name)&order=counter_id.asc'),
       request('/rest/v1/profiles?select=id,full_name,active,counter_id&role=eq.attendant&order=full_name.asc')
     ]);
@@ -324,14 +324,28 @@
       return;
     }
     try {
-      const created = await request('/rest/v1/counters', {
-        method: 'POST',
-        body: {
-          name: trimmedName,
-          service_id: selectedServices[0],
-          priority_enabled: Boolean(fields.priority_enabled)
+      let created;
+      try {
+        created = await request('/rest/v1/counters', {
+          method: 'POST',
+          body: {
+            name: trimmedName,
+            service_id: selectedServices[0],
+            priority_enabled: Boolean(fields.priority_enabled)
+          }
+        });
+      } catch (error) {
+        if (!/priority_enabled|does not exist/i.test(error.message || '')) {
+          throw error;
         }
-      });
+        created = await request('/rest/v1/counters', {
+          method: 'POST',
+          body: {
+            name: trimmedName,
+            service_id: selectedServices[0]
+          }
+        });
+      }
       const createdCounter = Array.isArray(created) ? created[0] : created;
       for (const serviceId of selectedServices.slice(1)) {
         await request('/rest/v1/counter_services', {

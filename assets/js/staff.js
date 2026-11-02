@@ -187,7 +187,7 @@
       if (!authResponse.ok) throw new Error(auth.msg || auth.message || 'Email ou palavra-passe inválidos.');
       accessToken = auth.access_token;
       const query = new URLSearchParams({
-        select: 'id,full_name,role,service_id,counter_id,active,counters(name,service_id,priority_enabled,services(name))',
+        select: 'id,full_name,role,service_id,counter_id,active,counters(name,service_id,services(name))',
         id: `eq.${auth.user.id}`,
         active: 'eq.true',
         role: 'eq.attendant'

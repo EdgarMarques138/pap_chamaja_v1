@@ -58,6 +58,18 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--orange); outlin
 .eyebrow { margin: 0 0 12px; color: var(--teal); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 h1, h2, h3, p { margin-top: 0; }
 h1 { margin-bottom: 20px; font-family: Georgia, "Times New Roman", serif; font-size: 56px; font-weight: 700; line-height: 1.02; }
+.portal-title {
+  margin-bottom: 14px;
+  font-size: clamp(3.4rem, 5vw, 6rem);
+  line-height: .96;
+  letter-spacing: -.05em;
+}
+.section-heading {
+  margin-bottom: 26px;
+}
+.section-heading > p:last-child {
+  margin-bottom: 0;
+}
 h1 span { color: var(--teal); font-style: italic; }
 .intro { max-width: 530px; margin-bottom: 26px; color: var(--muted); font-size: 18px; line-height: 1.6; }
 .home-actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -129,10 +141,36 @@ h1 span { color: var(--teal); font-style: italic; }
 .staff-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .staff-heading-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .staff-heading-row h2 { margin-bottom: 8px; }
-.staff-login { width: min(100%, 480px); padding: 24px; display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 8px; background: white; }
-.staff-login label { margin-top: 6px; color: var(--ink); font-size: 14px; font-weight: 700; }
-.staff-login input { width: 100%; min-height: 46px; padding: 0 12px; border: 1px solid #aebdb6; border-radius: 5px; color: var(--ink); background: #fff; font: inherit; }
-.staff-login input:focus { border-color: var(--teal); outline: 2px solid rgba(18, 110, 100, .15); }
+.staff-login {
+  width: min(100%, 560px);
+  padding: 28px 26px 18px;
+  display: grid;
+  gap: 12px;
+  border: 1px solid #d4d9d0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .34);
+  box-shadow: 0 1px 0 rgba(20, 35, 34, .02);
+}
+.staff-login label {
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+.staff-login input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #b8c3bc;
+  border-radius: 6px;
+  color: var(--ink);
+  background: rgba(255, 255, 255, .62);
+  font: inherit;
+}
+.staff-login input:focus {
+  border-color: var(--teal);
+  outline: 2px solid rgba(18, 110, 100, .12);
+}
 .staff-login .button { margin-top: 12px; }
 .staff-current { min-height: 290px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .staff-current > span:not(.eyebrow) { margin-top: 8px; color: var(--muted); }

@@ -288,7 +288,15 @@
         if (backendEnabled) {
           const ahead = data.tickets.filter(item => item.serviceId === service.id && item.state === 'waiting').length;
           try {
-            const result = await backendRpc('emit_ticket', { p_service_id: service.id, p_priority: priority });
+            let result;
+            try {
+              result = await backendRpc('emit_ticket', { p_service_id: service.id, p_priority: priority });
+            } catch (error) {
+              if (!/p_priority|priority|function.*emit_ticket|does not exist/i.test(error.message || '')) {
+                throw error;
+              }
+              result = await backendRpc('emit_ticket', { p_service_id: service.id });
+            }
             const remoteTicket = Array.isArray(result) ? result[0] : result;
             lastIssued = mapRemoteTicket(remoteTicket);
             setText('ticket-number', lastIssued.number);
