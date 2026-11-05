@@ -403,27 +403,31 @@
   }
 
   async function resetEmployeePassword(employee) {
-    const email = window.prompt(`Email do funcionário ${employee.full_name} para receber o link de recuperação:`, '');
-    if (email === null) return;
-    const trimmedEmail = String(email).trim();
-    if (!trimmedEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      setText('employee-message', 'Insere um email válido para enviar o link de recuperação.');
+    const nextPassword = window.prompt(`Nova palavra-passe para ${employee.full_name}:`, '');
+    if (nextPassword === null) return;
+    const value = nextPassword.trim();
+    if (!value || value.length < 8) {
+      setText('employee-message', 'A palavra-passe deve ter pelo menos 8 caracteres.');
       return;
     }
+
     try {
-      const response = await fetch(`${backendUrl}/auth/v1/recover`, {
+      const response = await fetch('api/admin-reset-password.php', {
         method: 'POST',
-        headers: { apikey: backendKey, 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        },
         body: JSON.stringify({
-          email: trimmedEmail,
-          redirect_to: `${window.location.origin}${window.location.pathname}`
+          userId: employee.id,
+          password: value
         })
       });
       const data = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error(data?.msg || data?.message || 'Não foi possível enviar o link de recuperação.');
+        throw new Error(data?.error || 'Não foi possível atualizar a palavra-passe.');
       }
-      setText('employee-message', `Link de recuperação enviado para ${trimmedEmail}.`);
+      setText('employee-message', `Palavra-passe atualizada para ${employee.full_name}.`);
     } catch (error) {
       setText('employee-message', error.message);
     }
