@@ -238,6 +238,72 @@ grant insert, update, delete on public.services, public.counters, public.profile
 revoke all on public.ticket_sequences from anon, authenticated;
 revoke insert, update, delete on public.tickets from anon, authenticated;
 
+create or replace function public.admin_reset_employee_password(p_user_id uuid, p_new_password text)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Acesso restrito a administradores ativos.' using errcode = '42501';
+  end if;
+
+  if length(trim(p_new_password)) < 8 then
+    raise exception 'A palavra-passe deve ter pelo menos 8 caracteres.' using errcode = 'P0001';
+  end if;
+
+  if not exists (
+    select 1 from public.profiles
+    where id = p_user_id and role = 'attendant'
+  ) then
+    raise exception 'Só é possível redefinir a palavra-passe de funcionários.' using errcode = 'P0001';
+  end if;
+
+  update auth.users
+  set encrypted_password = crypt(p_new_password, gen_salt('bf')),
+      updated_at = now()
+  where id = p_user_id;
+
+  if not found then
+    raise exception 'Funcionário não encontrado.' using errcode = 'P0001';
+  end if;
+end;
+$$;
+
+create or replace function public.admin_delete_employee(p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Acesso restrito a administradores ativos.' using errcode = '42501';
+  end if;
+
+  if p_user_id = (select auth.uid()) then
+    raise exception 'Não podes remover a tua própria conta de administrador.' using errcode = 'P0001';
+  end if;
+
+  if not exists (
+    select 1 from public.profiles
+    where id = p_user_id and role = 'attendant'
+  ) then
+    raise exception 'Só é possível remover funcionários.' using errcode = 'P0001';
+  end if;
+
+  delete from auth.users where id = p_user_id;
+
+  if not found then
+    raise exception 'Funcionário não encontrado.' using errcode = 'P0001';
+  end if;
+end;
+$$;
+
+grant execute on function public.admin_reset_employee_password(uuid, text) to authenticated;
+grant execute on function public.admin_delete_employee(uuid) to authenticated;
+
 create or replace function public.emit_ticket(p_service_id uuid, p_priority boolean default false)
 returns public.tickets
 language plpgsql

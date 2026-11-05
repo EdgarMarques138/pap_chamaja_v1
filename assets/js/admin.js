@@ -110,6 +110,38 @@
     }
   }
 
+  async function syncCounterServices(counter, serviceIds) {
+    const selectedIds = [...new Set((serviceIds || []).filter(Boolean))];
+    if (!selectedIds.length) {
+      throw new Error('Seleciona pelo menos uma área para este balcão.');
+    }
+
+    const existingLinks = await request(`/rest/v1/counter_services?select=id,service_id&counter_id=eq.${encodeURIComponent(counter.id)}`);
+    const selectedSet = new Set(selectedIds);
+    for (const link of existingLinks) {
+      if (!selectedSet.has(link.service_id)) {
+        await request(`/rest/v1/counter_services?id=eq.${encodeURIComponent(link.id)}`, { method: 'DELETE' });
+      }
+    }
+
+    const existingIds = new Set(existingLinks.map(link => link.service_id));
+    for (const serviceId of selectedIds) {
+      if (!existingIds.has(serviceId)) {
+        await request('/rest/v1/counter_services', {
+          method: 'POST',
+          body: { counter_id: counter.id, service_id: serviceId }
+        });
+      }
+    }
+
+    if (counter.service_id !== selectedIds[0]) {
+      await request(`/rest/v1/counters?id=eq.${encodeURIComponent(counter.id)}`, {
+        method: 'PATCH',
+        body: { service_id: selectedIds[0] }
+      });
+    }
+  }
+
   function renderCounters() {
     const priorityField = document.querySelector('#counter-priority')?.closest('.counter-priority-field');
     if (priorityField) {
@@ -159,14 +191,30 @@
       const actions = document.createElement('div');
       actions.className = 'admin-row-actions';
       const area = document.createElement('select');
-      area.setAttribute('aria-label', `Área do ${counter.name}`);
-      for (const service of services.filter(item => item.active)) addOption(area, service.id, service.name);
-      const assignedService = services.find(service => service.id === counter.service_id);
-      if (assignedService && !assignedService.active) {
-        addOption(area, assignedService.id, `${assignedService.name} · Inativa`);
+      area.setAttribute('aria-label', `Áreas do ${counter.name}`);
+      area.multiple = true;
+      area.size = Math.min(Math.max(3, services.filter(item => item.active).length), 6);
+
+      const activeServices = services.filter(item => item.active);
+      for (const service of activeServices) {
+        const option = document.createElement('option');
+        option.value = service.id;
+        option.textContent = service.name;
+        option.selected = Boolean(counter.service_ids?.includes(service.id));
+        area.append(option);
       }
-      area.value = counter.service_id;
-      area.addEventListener('change', () => updateCounter(counter, { service_id: area.value }));
+      const inactiveAssigned = services.filter(service => counter.service_ids?.includes(service.id) && !service.active);
+      for (const service of inactiveAssigned) {
+        const option = document.createElement('option');
+        option.value = service.id;
+        option.textContent = `${service.name} · Inativa`;
+        option.selected = true;
+        area.append(option);
+      }
+      area.addEventListener('change', () => {
+        const selectedIds = [...area.selectedOptions].map(option => option.value);
+        updateCounter(counter, { service_ids: selectedIds });
+      });
 
       const priorityToggle = document.createElement('label');
       priorityToggle.className = 'counter-priority-field';
@@ -218,12 +266,24 @@
       }
       counterSelect.value = employee.counter_id || '';
       counterSelect.addEventListener('change', () => updateEmployee(employee, { counter_id: counterSelect.value }));
+      const resetPassword = document.createElement('button');
+      resetPassword.className = 'button button-outline';
+      resetPassword.type = 'button';
+      resetPassword.textContent = 'Senha';
+      resetPassword.title = `Alterar palavra-passe de ${employee.full_name}`;
+      resetPassword.addEventListener('click', () => resetEmployeePassword(employee));
       const toggle = document.createElement('button');
       toggle.className = 'button button-outline';
       toggle.type = 'button';
       toggle.textContent = employee.active ? 'Desativar' : 'Ativar';
       toggle.addEventListener('click', () => updateEmployee(employee, { active: !employee.active }));
-      actions.append(counterSelect, toggle);
+      const remove = document.createElement('button');
+      remove.className = 'button button-outline';
+      remove.type = 'button';
+      remove.textContent = 'Remover';
+      remove.title = `Remover ${employee.full_name}`;
+      remove.addEventListener('click', () => deleteEmployee(employee));
+      actions.append(counterSelect, resetPassword, toggle, remove);
       row.append(label, actions);
       list.append(row);
     }
@@ -314,7 +374,14 @@
       setText('counter-message', 'Atendimento prioritário não está disponível nesta base de dados.');
       return;
     }
+
     try {
+      if (Array.isArray(changes.service_ids)) {
+        await syncCounterServices(counter, changes.service_ids);
+        await loadData();
+        return;
+      }
+
       await request(`/rest/v1/counters?id=eq.${encodeURIComponent(counter.id)}`, { method: 'PATCH', body: changes });
       await loadData();
     } catch (error) {
@@ -329,6 +396,40 @@
         changes.service_id = counter.service_id;
       }
       await request(`/rest/v1/profiles?id=eq.${encodeURIComponent(employee.id)}`, { method: 'PATCH', body: changes });
+      await loadData();
+    } catch (error) {
+      setText('employee-message', error.message);
+    }
+  }
+
+  async function resetEmployeePassword(employee) {
+    const nextPassword = window.prompt(`Nova palavra-passe para ${employee.full_name}:`, '');
+    if (nextPassword === null) return;
+    const value = nextPassword.trim();
+    if (!value || value.length < 8) {
+      setText('employee-message', 'A palavra-passe deve ter pelo menos 8 caracteres.');
+      return;
+    }
+    try {
+      await request('/rest/v1/rpc/admin_reset_employee_password', {
+        method: 'POST',
+        body: { p_user_id: employee.id, p_new_password: value }
+      });
+      setText('employee-message', `Palavra-passe redefinida para ${employee.full_name}.`);
+    } catch (error) {
+      setText('employee-message', error.message);
+    }
+  }
+
+  async function deleteEmployee(employee) {
+    const accepted = window.confirm(`Remover ${employee.full_name} e a conta de acesso deste funcionário?`);
+    if (!accepted) return;
+    try {
+      await request('/rest/v1/rpc/admin_delete_employee', {
+        method: 'POST',
+        body: { p_user_id: employee.id }
+      });
+      setText('employee-message', `${employee.full_name} foi removido.`);
       await loadData();
     } catch (error) {
       setText('employee-message', error.message);
