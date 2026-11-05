@@ -82,7 +82,12 @@
 
     const allTickets = element('all-tickets');
     allTickets.replaceChildren();
-    for (const ticket of tickets) {
+    const orderedTickets = [...tickets].sort((a, b) => {
+      const priorityDelta = Number(Boolean(b.priority)) - Number(Boolean(a.priority));
+      if (priorityDelta !== 0) return priorityDelta;
+      return new Date(a.created_at) - new Date(b.created_at);
+    });
+    for (const ticket of orderedTickets) {
       const row = document.createElement('tr');
       const values = [
         ticket.number,

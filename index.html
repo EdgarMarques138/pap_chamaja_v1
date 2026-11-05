@@ -139,6 +139,10 @@
         .sort((a, b) => Number(Boolean(b.priority)) - Number(Boolean(a.priority)) || a.createdAt - b.createdAt);
     }
 
+    function priorityFirst(list) {
+      return [...list].sort((a, b) => Number(Boolean(b.priority)) - Number(Boolean(a.priority)) || a.createdAt - b.createdAt);
+    }
+
     function mapRemoteTicket(ticket) {
       const serviceId = ticket.service_id;
       const serviceRelation = Array.isArray(ticket.services) ? ticket.services[0] : ticket.services;
@@ -339,6 +343,7 @@
           calledAt: null
         };
         data.tickets.push(ticket);
+        data.tickets = priorityFirst(data.tickets);
         lastIssued = ticket;
         setText('ticket-number', ticket.number);
         const ahead = waitingTicketsForService(service.id).filter(item => item.createdAt < ticket.createdAt || (item.priority && !ticket.priority)).length;
