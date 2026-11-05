@@ -413,7 +413,7 @@
     try {
       await request('/rest/v1/rpc/admin_reset_employee_password', {
         method: 'POST',
-        body: { p_user_id: employee.id, p_new_password: value }
+        body: { p_new_password: value, p_user_id: employee.id }
       });
       setText('employee-message', `Palavra-passe redefinida para ${employee.full_name}.`);
     } catch (error) {

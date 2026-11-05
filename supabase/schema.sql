@@ -271,6 +271,17 @@ begin
 end;
 $$;
 
+create or replace function public.admin_reset_employee_password(p_new_password text, p_user_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  perform public.admin_reset_employee_password(p_user_id, p_new_password);
+end;
+$$;
+
 create or replace function public.admin_delete_employee(p_user_id uuid)
 returns void
 language plpgsql
@@ -302,6 +313,7 @@ end;
 $$;
 
 grant execute on function public.admin_reset_employee_password(uuid, text) to authenticated;
+grant execute on function public.admin_reset_employee_password(text, uuid) to authenticated;
 grant execute on function public.admin_delete_employee(uuid) to authenticated;
 
 create or replace function public.emit_ticket(p_service_id uuid, p_priority boolean default false)
