@@ -412,11 +412,12 @@
     }
 
     try {
-      const response = await fetch('api/admin-reset-password.php', {
+      const response = await fetch(`${backendUrl}/functions/v1/admin-reset-password`, {
         method: 'POST',
         headers: {
+          apikey: backendKey,
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          Authorization: `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           userId: employee.id,
