@@ -261,6 +261,8 @@ begin
     raise exception 'Serviço indisponível.' using errcode = 'P0001';
   end if;
 
+  perform pg_advisory_xact_lock(194698);
+
   insert into public.ticket_sequences (service_id, ticket_day, last_number)
   values (v_service.id, v_day, 1)
   on conflict (service_id, ticket_day) do update
@@ -271,6 +273,29 @@ begin
   values (v_day, v_service.prefix || lpad(v_number::text, 3, '0'), v_service.id, p_priority)
   returning * into v_ticket;
   return v_ticket;
+end;
+$$;
+
+create or replace function public.admin_reset_tickets()
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_day date := (now() at time zone 'UTC')::date;
+  v_deleted_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Acesso reservado a administradores ativos.' using errcode = '42501';
+  end if;
+
+  perform pg_advisory_xact_lock(194698);
+
+  delete from public.tickets where ticket_day = v_day;
+  get diagnostics v_deleted_count = row_count;
+  delete from public.ticket_sequences where ticket_day = v_day;
+  return v_deleted_count;
 end;
 $$;
 
@@ -400,9 +425,11 @@ revoke all on function public.sync_counter_service_to_profiles() from public, an
 revoke all on function public.emit_ticket(uuid, boolean) from public;
 revoke all on function public.call_next_ticket() from public, anon;
 revoke all on function public.advance_ticket(uuid, text) from public, anon;
+revoke all on function public.admin_reset_tickets() from public, anon;
 grant execute on function public.is_active_staff() to authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
 grant execute on function public.emit_ticket(uuid, boolean) to anon, authenticated;
 grant execute on function public.call_next_ticket(), public.advance_ticket(uuid, text) to authenticated;
+grant execute on function public.admin_reset_tickets() to authenticated;
 
 notify pgrst, 'reload schema';

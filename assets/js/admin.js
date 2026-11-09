@@ -269,7 +269,7 @@
       const resetPassword = document.createElement('button');
       resetPassword.className = 'button button-outline';
       resetPassword.type = 'button';
-      resetPassword.textContent = 'Senha';
+      resetPassword.textContent = 'Redefinir palavra-passe';
       resetPassword.title = `Alterar palavra-passe de ${employee.full_name}`;
       resetPassword.addEventListener('click', () => resetEmployeePassword(employee));
       const toggle = document.createElement('button');
@@ -449,6 +449,26 @@
     }
   }
 
+  async function resetTickets() {
+    const accepted = window.confirm('Isto apaga todas as senhas emitidas hoje e o respetivo histórico do painel, e reinicia a numeração. Deseja continuar?');
+    if (!accepted) return;
+
+    const submit = element('ticket-reset-submit');
+    submit.disabled = true;
+    setText('ticket-reset-message', 'A reiniciar as senhas…');
+    try {
+      const deletedCount = await request('/rest/v1/rpc/admin_reset_tickets', {
+        method: 'POST',
+        body: {}
+      });
+      setText('ticket-reset-message', `Reset concluído. ${Number(deletedCount) || 0} senhas removidas; a numeração foi reiniciada.`);
+    } catch (error) {
+      setText('ticket-reset-message', error.message);
+    } finally {
+      submit.disabled = false;
+    }
+  }
+
   element('admin-login-form').addEventListener('submit', async event => {
     event.preventDefault();
     if (!backendUrl || !backendKey) {
@@ -613,6 +633,8 @@
     element('admin-login-view').hidden = false;
     element('admin-login-form').reset();
   });
+
+  element('ticket-reset-submit').addEventListener('click', resetTickets);
 
   if (!backendUrl || !backendKey) {
     element('admin-login-submit').disabled = true;
