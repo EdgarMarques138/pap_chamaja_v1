@@ -243,6 +243,8 @@ drop function if exists public.admin_reset_employee_password(uuid, text);
 
 grant execute on function public.admin_delete_employee(uuid) to authenticated;
 
+drop function if exists public.emit_ticket(uuid);
+
 create or replace function public.emit_ticket(p_service_id uuid, p_priority boolean default false)
 returns public.tickets
 language plpgsql
