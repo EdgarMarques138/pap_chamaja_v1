@@ -291,9 +291,9 @@ begin
 
   perform pg_advisory_xact_lock(194698);
 
-  delete from public.tickets;
+  delete from public.tickets where id is not null;
   get diagnostics v_deleted_count = row_count;
-  delete from public.ticket_sequences;
+  delete from public.ticket_sequences where service_id is not null;
   return v_deleted_count;
 end;
 $$;
