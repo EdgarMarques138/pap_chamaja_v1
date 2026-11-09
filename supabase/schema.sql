@@ -117,6 +117,12 @@ where service_id is null;
 
 alter table public.counters alter column service_id set not null;
 
+insert into public.counter_services (counter_id, service_id)
+select id, service_id
+from public.counters
+where service_id is not null
+on conflict (counter_id, service_id) do nothing;
+
 do $$
 begin
   if not exists (
@@ -173,6 +179,7 @@ $$;
 
 alter table public.services enable row level security;
 alter table public.counters enable row level security;
+alter table public.counter_services enable row level security;
 alter table public.profiles enable row level security;
 alter table public.ticket_sequences enable row level security;
 alter table public.tickets enable row level security;
@@ -201,6 +208,22 @@ drop policy if exists "admins manage counters" on public.counters;
 create policy "admins manage counters" on public.counters
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "staff read assigned counter services" on public.counter_services;
+create policy "staff read assigned counter services" on public.counter_services
+  for select to authenticated using (
+    public.is_admin()
+    or exists (
+      select 1 from public.profiles
+      where id = (select auth.uid())
+        and active
+        and role = 'attendant'
+        and counter_id = counter_services.counter_id
+    )
+  );
+drop policy if exists "admins manage counter services" on public.counter_services;
+create policy "admins manage counter services" on public.counter_services
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
 drop policy if exists "staff read own profile" on public.profiles;
 create policy "staff read own profile" on public.profiles
   for select to authenticated using (id = (select auth.uid()) or public.is_admin());
@@ -224,7 +247,17 @@ create policy "attendants read assigned area tickets" on public.tickets
         and p.role = 'attendant'
         and (
           tickets.counter_id = c.id
-          or (c.active and tickets.state = 'waiting' and tickets.service_id = c.service_id)
+          or (
+            c.active
+            and tickets.state = 'waiting'
+            and (
+              tickets.service_id = c.service_id
+              or exists (
+                select 1 from public.counter_services cs
+                where cs.counter_id = c.id and cs.service_id = tickets.service_id
+              )
+            )
+          )
         )
     )
   );
@@ -233,6 +266,7 @@ create policy "admins read all tickets" on public.tickets
   for select to authenticated using (public.is_admin());
 
 grant select on public.services, public.counters, public.tickets to anon, authenticated;
+grant select, insert, update, delete on public.counter_services to authenticated;
 grant select on public.profiles to authenticated;
 grant insert, update, delete on public.services, public.counters, public.profiles to authenticated;
 revoke all on public.ticket_sequences from anon, authenticated;
