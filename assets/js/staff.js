@@ -47,12 +47,13 @@
     const active = currentTicket();
     const allowed = new Set(profile.service_ids || [profile.service_id]);
     const waiting = tickets.filter(ticket => ticket.state === 'waiting' && allowed.has(ticket.service_id)).length;
+    const serviceNames = (profile.service_names?.length ? profile.service_names : [profile.service_name]).filter(Boolean).join(', ');
     setText('staff-name', profile.full_name);
-    setText('staff-assignment', `${profile.service_name} · ${profile.counter_name}`);
+    setText('staff-assignment', `${serviceNames} · ${profile.counter_name}`);
     setText('current-ticket', active?.number || '---');
     setText('current-service', active?.service_name || 'Não há atendimento em curso.');
     setText('current-status', active ? (active.state === 'serving' ? 'Atendimento em curso.' : 'Aguarda início do atendimento.') : '');
-    setText('queue-count', `${waiting} ${waiting === 1 ? 'senha em espera' : 'senhas em espera'} em ${profile.service_name}`);
+    setText('queue-count', `${waiting} ${waiting === 1 ? 'senha em espera' : 'senhas em espera'} em ${serviceNames}`);
 
     element('call-next').disabled = Boolean(active) || waiting === 0;
     element('start-service').disabled = !active || active.state !== 'called';
@@ -128,6 +129,19 @@
 
   async function refreshQueue() {
     if (!profile) return;
+    try {
+      const links = await request(`/rest/v1/counter_services?select=service_id,services(name)&counter_id=eq.${encodeURIComponent(profile.counter_id)}`);
+      profile.service_ids = [...new Set([profile.service_id, ...links.map(link => link.service_id)].filter(Boolean))];
+      const linkedNames = links.map(link => Array.isArray(link.services) ? link.services[0]?.name : link.services?.name);
+      profile.service_names = [...new Set([profile.service_name, ...linkedNames].filter(Boolean))];
+    } catch (error) {
+      if (!/counter_services|does not exist|not found|not exist/i.test(error.message || '')) {
+        throw error;
+      }
+      profile.service_ids = [profile.service_id].filter(Boolean);
+      profile.service_names = [profile.service_name].filter(Boolean);
+    }
+
     const queryOptions = {
       order: 'created_at.desc',
       limit: '1000'
