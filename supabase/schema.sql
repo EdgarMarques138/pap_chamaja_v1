@@ -283,7 +283,6 @@ security definer
 set search_path = public, pg_temp
 as $$
 declare
-  v_day date := (now() at time zone 'UTC')::date;
   v_deleted_count integer;
 begin
   if not public.is_admin() then
@@ -292,9 +291,9 @@ begin
 
   perform pg_advisory_xact_lock(194698);
 
-  delete from public.tickets where ticket_day = v_day;
+  delete from public.tickets;
   get diagnostics v_deleted_count = row_count;
-  delete from public.ticket_sequences where ticket_day = v_day;
+  delete from public.ticket_sequences;
   return v_deleted_count;
 end;
 $$;

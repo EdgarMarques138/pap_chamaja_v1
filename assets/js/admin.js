@@ -450,7 +450,7 @@
   }
 
   async function resetTickets() {
-    const accepted = window.confirm('Isto apaga todas as senhas emitidas hoje e o respetivo histórico do painel, e reinicia a numeração. Deseja continuar?');
+    const accepted = window.confirm('Isto apaga todas as senhas e todo o histórico, de todos os dias, e reinicia a numeração. Esta ação não pode ser desfeita. Deseja continuar?');
     if (!accepted) return;
 
     const submit = element('ticket-reset-submit');
