@@ -85,7 +85,7 @@
     const orderedTickets = [...tickets].sort((a, b) => {
       const priorityDelta = Number(Boolean(b.priority)) - Number(Boolean(a.priority));
       if (priorityDelta !== 0) return priorityDelta;
-      return new Date(a.created_at) - new Date(b.created_at);
+      return new Date(a.created_at) - new Date(b.created_at) || a.id.localeCompare(b.id);
     });
     for (const ticket of orderedTickets) {
       const row = document.createElement('tr');
@@ -102,12 +102,23 @@
         cell.textContent = value;
         row.append(cell);
       }
+      const actionCell = document.createElement('td');
+      if (ticket.state === 'waiting' && allowed.has(ticket.service_id)) {
+        const callButton = document.createElement('button');
+        callButton.className = 'button button-outline';
+        callButton.type = 'button';
+        callButton.textContent = 'Chamar';
+        callButton.disabled = Boolean(active);
+        callButton.addEventListener('click', () => performAction('call-ticket', ticket));
+        actionCell.append(callButton);
+      }
+      row.append(actionCell);
       allTickets.append(row);
     }
     if (!tickets.length) {
       const row = document.createElement('tr');
       const cell = document.createElement('td');
-      cell.colSpan = 5;
+      cell.colSpan = 6;
       cell.className = 'empty-state';
       cell.textContent = 'Ainda não existem senhas.';
       row.append(cell);
@@ -150,18 +161,24 @@
     render();
   }
 
-  async function performAction(action) {
+  async function performAction(action, selectedTicket = null) {
     const active = currentTicket();
     if (!profile) {
       showLogin();
       return;
     }
-    setText('action-message', 'A atualizar atendimento…');
+    setText('action-message', action === 'call-ticket' && selectedTicket
+      ? `A chamar senha ${selectedTicket.number}…`
+      : 'A atualizar atendimento…');
     try {
       if (action === 'call') {
         const result = await rpc('call_next_ticket');
         const ticket = Array.isArray(result) ? result[0] : result;
         setText('action-message', ticket ? `Senha ${ticket.number} chamada.` : 'Não há senhas em espera neste serviço.');
+      } else if (action === 'call-ticket') {
+        if (!selectedTicket) return;
+        await rpc('call_ticket', { p_ticket_id: selectedTicket.id });
+        setText('action-message', `Senha ${selectedTicket.number} chamada.`);
       } else {
         if (!active) return;
         const actionName = action === 'start' ? 'start' : action === 'finish' ? 'done' : 'absent';
