@@ -167,14 +167,15 @@
     async function refreshRemoteData() {
       const remoteServices = await backendRequest('/rest/v1/services?select=id,name,prefix,description,active&active=eq.true&order=position.asc');
       services = remoteServices;
+      const ticketDay = new Date().toISOString().slice(0, 10);
       let remoteTickets;
       try {
-        remoteTickets = await backendRequest('/rest/v1/tickets?select=id,number,service_id,counter_id,attendant_id,state,priority,created_at,updated_at,called_at,services(name),counters(name)&order=created_at.desc&limit=250');
+        remoteTickets = await backendRequest(`/rest/v1/tickets?select=id,number,service_id,counter_id,attendant_id,state,priority,created_at,updated_at,called_at,services(name),counters(name)&ticket_day=eq.${ticketDay}&order=created_at.desc&limit=250`);
       } catch (error) {
         if (!/priority|column.*does not exist|does not exist/i.test(error.message || '')) {
           throw error;
         }
-        remoteTickets = await backendRequest('/rest/v1/tickets?select=id,number,service_id,counter_id,attendant_id,state,created_at,updated_at,called_at,services(name),counters(name)&order=created_at.desc&limit=250');
+        remoteTickets = await backendRequest(`/rest/v1/tickets?select=id,number,service_id,counter_id,attendant_id,state,created_at,updated_at,called_at,services(name),counters(name)&ticket_day=eq.${ticketDay}&order=created_at.desc&limit=250`);
       }
       data = { tickets: remoteTickets.map(mapRemoteTicket) };
       render();
