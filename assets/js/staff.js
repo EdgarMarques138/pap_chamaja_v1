@@ -141,6 +141,12 @@
       profile.service_ids = [profile.service_id].filter(Boolean);
       profile.service_names = [profile.service_name].filter(Boolean);
     }
+    if (!profile.service_ids?.length) {
+      profile.service_ids = [profile.service_id].filter(Boolean);
+    }
+    if (!profile.service_names?.length) {
+      profile.service_names = [profile.service_name].filter(Boolean);
+    }
 
     const queryOptions = {
       order: 'created_at.desc',
@@ -247,25 +253,33 @@
       if (!profiles.length) throw new Error('Esta conta não está autorizada como funcionário ativo.');
       const row = profiles[0];
       const counter = Array.isArray(row.counters) ? row.counters[0] : row.counters;
+      const counterService = Array.isArray(counter?.services) ? counter.services[0] : counter?.services;
+      const counterServiceName = counterService?.name || null;
       let linkedServiceIds = [counter?.service_id].filter(Boolean);
+      let linkedServiceNames = [counterServiceName].filter(Boolean);
       try {
         await request(`/rest/v1/counter_services?select=id&limit=1`);
         const counterLinks = await request(`/rest/v1/counter_services?select=service_id,services(name)&counter_id=eq.${row.counter_id}`);
         linkedServiceIds = [...new Set([...linkedServiceIds, ...counterLinks.map(link => link.service_id)])].filter(Boolean);
+        linkedServiceNames = [...new Set([
+          ...linkedServiceNames,
+          ...counterLinks.map(link => Array.isArray(link.services) ? link.services[0]?.name : link.services?.name)
+        ].filter(Boolean))];
       } catch (error) {
         if (!/counter_services|does not exist|not found|not exist/i.test(error.message || '')) {
           throw error;
         }
       }
-      const service = Array.isArray(counter?.services) ? counter.services[0] : counter?.services;
-      if (!row.counter_id || !counter || !linkedServiceIds.length || !service) {
+      const primaryServiceName = linkedServiceNames[0] || counterServiceName || (counter?.service_name || null);
+      if (!row.counter_id || !counter || !linkedServiceIds.length || !primaryServiceName) {
         throw new Error('O balcão atribuído precisa de ter uma área válida.');
       }
       profile = {
         ...row,
-        service_id: counter.service_id || linkedServiceIds[0],
+        service_id: row.service_id || counter.service_id || linkedServiceIds[0],
         service_ids: linkedServiceIds,
-        service_name: service.name,
+        service_name: primaryServiceName,
+        service_names: linkedServiceNames,
         counter_name: counter.name
       };
       setText('login-message', '');
