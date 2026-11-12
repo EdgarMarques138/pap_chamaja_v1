@@ -430,7 +430,10 @@
       }
       setText('employee-message', `Palavra-passe atualizada para ${employee.full_name}.`);
     } catch (error) {
-      setText('employee-message', error.message);
+      const message = error instanceof Error && error.message === 'Failed to fetch'
+        ? 'Não foi possível contactar a função de redefinição da palavra-passe. Verifica se a Edge Function admin-reset-password está publicada no Supabase.'
+        : error.message;
+      setText('employee-message', message);
     }
   }
 
