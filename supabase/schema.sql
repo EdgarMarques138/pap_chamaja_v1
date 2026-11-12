@@ -498,12 +498,15 @@ begin
   where id = p_ticket_id for update;
   if not found
     or v_ticket.counter_id is distinct from v_profile.counter_id
-    or not exists (
-      select 1
-      from public.counter_services cs
-      where cs.counter_id = v_profile.counter_id and cs.service_id = v_ticket.service_id
+    or (
+      v_ticket.service_id is distinct from v_counter.service_id
+      and not exists (
+        select 1
+        from public.counter_services cs
+        where cs.counter_id = v_profile.counter_id
+          and cs.service_id = v_ticket.service_id
+      )
     )
-    and v_ticket.service_id is distinct from v_counter.service_id
   then
     raise exception 'Senha não encontrada no balcão atribuído.' using errcode = '42501';
   end if;
