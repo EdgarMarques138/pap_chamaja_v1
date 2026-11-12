@@ -267,9 +267,9 @@
       counterSelect.value = employee.counter_id || '';
       counterSelect.addEventListener('change', () => updateEmployee(employee, { counter_id: counterSelect.value }));
       const resetPassword = document.createElement('button');
-      resetPassword.className = 'button button-outline';
+      resetPassword.className = 'button button-outline reset-password-button';
       resetPassword.type = 'button';
-      resetPassword.textContent = 'Redefinir palavra-passe';
+      resetPassword.textContent = 'Redefinir';
       resetPassword.title = `Alterar palavra-passe de ${employee.full_name}`;
       resetPassword.addEventListener('click', () => resetEmployeePassword(employee));
       const toggle = document.createElement('button');
