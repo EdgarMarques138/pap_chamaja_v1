@@ -304,9 +304,9 @@ h1 span { color: var(--teal); font-style: italic; }
 .admin-row-actions input:nth-of-type(3) { width: 210px; }
 .admin-row-actions .button { min-height: 42px; padding-inline: 12px; }
 .admin-row-actions .reset-password-button {
-  min-height: 34px;
-  padding-inline: 10px;
-  font-size: 0.85rem;
+  min-height: 42px;
+  padding-inline: 12px;
+  font-size: inherit;
   white-space: nowrap;
 }
 .area-row { align-items: flex-start; }
