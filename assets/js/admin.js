@@ -269,7 +269,7 @@
       const resetPassword = document.createElement('button');
       resetPassword.className = 'button button-outline reset-password-button';
       resetPassword.type = 'button';
-      resetPassword.textContent = 'Redefinir';
+      resetPassword.textContent = 'Redefinir palavra-passe';
       resetPassword.title = `Alterar palavra-passe de ${employee.full_name}`;
       resetPassword.addEventListener('click', () => resetEmployeePassword(employee));
       const toggle = document.createElement('button');
