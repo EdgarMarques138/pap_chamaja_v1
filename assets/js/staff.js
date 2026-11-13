@@ -105,11 +105,11 @@
         row.append(cell);
       }
       const actionCell = document.createElement('td');
-      if (ticket.state === 'waiting' && allowed.has(ticket.service_id)) {
+      if (['waiting', 'absent'].includes(ticket.state) && allowed.has(ticket.service_id)) {
         const callButton = document.createElement('button');
         callButton.className = 'button button-outline';
         callButton.type = 'button';
-        callButton.textContent = 'Chamar';
+        callButton.textContent = ticket.state === 'absent' ? 'Chamar novamente' : 'Chamar';
         callButton.disabled = Boolean(active);
         callButton.addEventListener('click', () => performAction('call-ticket', ticket));
         actionCell.append(callButton);

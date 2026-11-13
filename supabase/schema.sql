@@ -434,7 +434,7 @@ begin
 
   select * into v_ticket from public.tickets
   where id = p_ticket_id
-    and state = 'waiting'
+    and state in ('waiting', 'absent')
     and service_id in (
       select service_id from public.counter_services where counter_id = v_profile.counter_id
       union
@@ -461,6 +461,8 @@ begin
   update public.tickets set
     state = 'called',
     called_at = now(),
+    started_at = null,
+    finished_at = null,
     updated_at = now(),
     attendant_id = v_profile.id,
     counter_id = v_profile.counter_id
