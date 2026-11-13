@@ -84,8 +84,7 @@ Deno.serve(async (req: Request) => {
       },
     });
 
-    const { error } = await adminClient.auth.admin.updateUser({
-      user_id: userId,
+    const { error } = await adminClient.auth.admin.updateUserById(userId, {
       password,
     });
 
