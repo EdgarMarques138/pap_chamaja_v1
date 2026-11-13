@@ -75,6 +75,7 @@ create table if not exists public.tickets (
   id uuid primary key default gen_random_uuid(),
   ticket_day date not null default (now() at time zone 'UTC')::date,
   number text not null,
+  caller_name text,
   service_id uuid not null references public.services(id) on delete restrict,
   state text not null default 'waiting' check (state in ('waiting', 'called', 'serving', 'done', 'absent')),
   created_at timestamptz not null default now(),
@@ -86,6 +87,9 @@ create table if not exists public.tickets (
   counter_id uuid references public.counters(id) on delete set null,
   unique (ticket_day, number)
 );
+
+alter table public.tickets
+  add column if not exists caller_name text;
 
 create index if not exists tickets_queue_order on public.tickets (state, created_at);
 create index if not exists tickets_service_queue on public.tickets (service_id, state, created_at);
@@ -278,8 +282,13 @@ drop function if exists public.admin_reset_employee_password(uuid, text);
 grant execute on function public.admin_delete_employee(uuid) to authenticated;
 
 drop function if exists public.emit_ticket(uuid);
+drop function if exists public.emit_ticket(uuid, boolean);
 
-create or replace function public.emit_ticket(p_service_id uuid, p_priority boolean default false)
+create or replace function public.emit_ticket(
+  p_service_id uuid,
+  p_priority boolean default false,
+  p_caller_name text default null
+)
 returns public.tickets
 language plpgsql
 security definer
@@ -305,8 +314,8 @@ begin
     set last_number = public.ticket_sequences.last_number + 1
   returning last_number into v_number;
 
-  insert into public.tickets (ticket_day, number, service_id, priority)
-  values (v_day, v_service.prefix || lpad(v_number::text, 3, '0'), v_service.id, p_priority)
+  insert into public.tickets (ticket_day, number, service_id, priority, caller_name)
+  values (v_day, v_service.prefix || lpad(v_number::text, 3, '0'), v_service.id, p_priority, nullif(btrim(p_caller_name), ''))
   returning * into v_ticket;
   return v_ticket;
 end;
@@ -530,14 +539,14 @@ $$;
 revoke all on function public.is_active_staff() from public, anon;
 revoke all on function public.is_admin() from public, anon;
 revoke all on function public.sync_counter_service_to_profiles() from public, anon, authenticated;
-revoke all on function public.emit_ticket(uuid, boolean) from public;
+revoke all on function public.emit_ticket(uuid, boolean, text) from public;
 revoke all on function public.call_next_ticket() from public, anon;
 revoke all on function public.call_ticket(uuid) from public, anon;
 revoke all on function public.advance_ticket(uuid, text) from public, anon;
 revoke all on function public.admin_reset_tickets() from public, anon;
 grant execute on function public.is_active_staff() to authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
-grant execute on function public.emit_ticket(uuid, boolean) to anon, authenticated;
+grant execute on function public.emit_ticket(uuid, boolean, text) to anon, authenticated;
 grant execute on function public.call_next_ticket(), public.advance_ticket(uuid, text) to authenticated;
 grant execute on function public.call_ticket(uuid) to authenticated;
 grant execute on function public.admin_reset_tickets() to authenticated;

@@ -75,6 +75,10 @@ h1 span { color: var(--teal); font-style: italic; }
 .home-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .priority-toggle { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 18px; color: var(--ink); font-weight: 700; }
 .priority-toggle input { width: 16px; height: 16px; }
+.caller-name-field { display: grid; width: min(100%, 520px); gap: 7px; margin: 0 0 18px; }
+.caller-name-field label { font-weight: 700; }
+.caller-name-field input { min-height: 44px; padding: 0 12px; border: 1px solid #aebdb6; border-radius: 5px; color: var(--ink); background: white; font: inherit; }
+.caller-name-field small { color: var(--muted); line-height: 1.4; }
 .button { min-height: 46px; padding: 0 18px; border: 1px solid transparent; border-radius: 6px; font-weight: 700; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease; }
 .button:hover:not(:disabled) { transform: translateY(-1px); }
 .button:disabled { opacity: .46; cursor: not-allowed; }
@@ -93,6 +97,7 @@ h1 span { color: var(--teal); font-style: italic; }
 .box-heading { display: flex; align-items: center; justify-content: space-between; }
 .live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 5px rgba(239, 169, 75, .15); }
 .current-number { position: relative; z-index: 1; display: block; margin: 32px 0 18px; color: var(--orange); font-family: Georgia, "Times New Roman", serif; font-size: 72px; line-height: 1; }
+.current-number.caller-name-display, .panel-number.caller-name-display { max-width: 100%; overflow-wrap: anywhere; font-family: inherit; font-size: 36px; line-height: 1.15; }
 .counter-line { position: relative; z-index: 1; display: flex; justify-content: space-between; gap: 12px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, .23); font-weight: 700; }
 .current-hint { position: relative; z-index: 1; margin: 15px 0 0; color: #c4d7d0; font-size: 14px; }
 .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 12px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }

@@ -57,11 +57,17 @@
         <input id="priority-ticket" type="checkbox">
         <span>Atendimento prioritário</span>
       </label>
+      <div class="caller-name-field">
+        <label for="caller-name">Nome para chamada (opcional)</label>
+        <input id="caller-name" type="text" maxlength="80" autocomplete="name" placeholder="Deixa em branco para ser chamado pelo número">
+        <small>Se preencheres, o nome ficará visível no painel durante a chamada.</small>
+      </div>
       <div class="service-grid" id="service-list"></div>
       <div class="ticket-result" id="ticket-result" aria-live="polite" hidden>
         <p class="eyebrow">Senha emitida</p>
         <strong id="ticket-number">---</strong>
         <p id="ticket-detail"></p>
+        <p id="ticket-photo-reminder" class="ticket-photo-reminder" hidden>Tire uma foto da senha para não a perder.</p>
         <button class="button button-outline" type="button" data-view="emit">Retirar outra senha</button>
       </div>
     </section>
@@ -151,6 +157,7 @@
       return {
         id: ticket.id,
         number: ticket.number,
+        callerName: ticket.caller_name || '',
         serviceId,
         serviceName: serviceRelation?.name || service?.name || 'Serviço',
         state: ticket.state,
@@ -170,9 +177,9 @@
       const ticketDay = new Date().toISOString().slice(0, 10);
       let remoteTickets;
       try {
-        remoteTickets = await backendRequest(`/rest/v1/tickets?select=id,number,service_id,counter_id,attendant_id,state,priority,created_at,updated_at,called_at,services(name),counters(name)&ticket_day=eq.${ticketDay}&order=created_at.desc&limit=250`);
+        remoteTickets = await backendRequest(`/rest/v1/tickets?select=id,number,caller_name,service_id,counter_id,attendant_id,state,priority,created_at,updated_at,called_at,services(name),counters(name)&ticket_day=eq.${ticketDay}&order=created_at.desc&limit=250`);
       } catch (error) {
-        if (!/priority|column.*does not exist|does not exist/i.test(error.message || '')) {
+        if (!/priority|caller_name|column.*does not exist|does not exist/i.test(error.message || '')) {
           throw error;
         }
         remoteTickets = await backendRequest(`/rest/v1/tickets?select=id,number,service_id,counter_id,attendant_id,state,created_at,updated_at,called_at,services(name),counters(name)&ticket_day=eq.${ticketDay}&order=created_at.desc&limit=250`);
@@ -217,6 +224,13 @@
       document.getElementById(id).textContent = value;
     }
 
+    function setTicketDisplay(id, ticket) {
+      const target = document.getElementById(id);
+      const usesName = Boolean(ticket?.callerName);
+      target.textContent = ticket ? (ticket.callerName || ticket.number) : '---';
+      target.classList.toggle('caller-name-display', usesName);
+    }
+
     function renderServices() {
       const list = document.getElementById('service-list');
       list.replaceChildren();
@@ -244,7 +258,7 @@
       const today = new Date().toDateString();
       const done = data.tickets.filter(ticket => ticket.state === 'done' && new Date(ticket.updatedAt).toDateString() === today).length;
 
-      setText('home-current', active ? active.number : '---');
+      setTicketDisplay('home-current', active);
       setText('home-service', active ? active.serviceName : 'A aguardar chamada');
       setText('home-counter', active ? active.counterName : '—');
       setText('home-hint', active ? (active.state === 'serving' ? 'Atendimento em curso.' : 'Dirija-se ao balcão indicado.') : 'Ainda não foi chamada nenhuma senha.');
@@ -252,7 +266,7 @@
       setText('home-serving', String(serving));
       setText('home-done', String(done));
 
-      setText('panel-current', active ? active.number : '---');
+      setTicketDisplay('panel-current', active);
       setText('panel-service', active ? active.serviceName : 'A aguardar chamada');
       setText('panel-counter', active ? active.counterName : '—');
       const recent = data.tickets.filter(ticket => ticket.calledAt).sort((a, b) => b.calledAt - a.calledAt).slice(0, 5);
@@ -268,7 +282,7 @@
           const row = document.createElement('div');
           row.className = 'recent-row';
           const number = document.createElement('strong');
-          number.textContent = ticket.number;
+          number.textContent = ticket.callerName || ticket.number;
           const label = document.createElement('span');
           label.textContent = `${ticket.serviceName} · ${ticket.counterName || 'Balcão 1'}`;
           row.append(number, label);
@@ -305,23 +319,41 @@
         const service = services.find(item => item.id === serviceButton.dataset.service);
         if (!service) return;
         const priority = document.getElementById('priority-ticket').checked;
+        const callerName = document.getElementById('caller-name').value.trim().slice(0, 80);
+        const photoReminder = document.getElementById('ticket-photo-reminder');
+        photoReminder.hidden = true;
         if (backendEnabled) {
           const ahead = waitingTicketsForService(service.id).length;
           try {
             let result;
             try {
-              result = await backendRpc('emit_ticket', { p_service_id: service.id, p_priority: priority });
+              result = await backendRpc('emit_ticket', {
+                p_service_id: service.id,
+                p_priority: priority,
+                p_caller_name: callerName || null
+              });
             } catch (error) {
-              if (!/p_priority|priority|function.*emit_ticket|does not exist/i.test(error.message || '')) {
+              if (!/p_caller_name|p_priority|priority|function.*emit_ticket|does not exist/i.test(error.message || '')) {
                 throw error;
               }
-              result = await backendRpc('emit_ticket', { p_service_id: service.id });
+              if (callerName) {
+                throw new Error('A chamada pelo nome ainda não está ativada na base de dados. Executa supabase/add_ticket_caller_name.sql no SQL Editor do Supabase.');
+              }
+              try {
+                result = await backendRpc('emit_ticket', { p_service_id: service.id, p_priority: priority });
+              } catch (fallbackError) {
+                if (!/p_priority|priority|function.*emit_ticket|does not exist/i.test(fallbackError.message || '')) {
+                  throw fallbackError;
+                }
+                result = await backendRpc('emit_ticket', { p_service_id: service.id });
+              }
             }
             const remoteTicket = Array.isArray(result) ? result[0] : result;
             lastIssued = mapRemoteTicket(remoteTicket);
             setText('ticket-number', lastIssued.number);
-            setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
+            setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''}${callerName ? ` · Chamada por: ${callerName}` : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
             document.getElementById('ticket-result').hidden = false;
+            photoReminder.hidden = false;
             await refreshRemoteData();
           } catch (error) {
             setText('ticket-number', '—');
@@ -337,6 +369,7 @@
           number: service.prefix + String(previous + 1).padStart(3, '0'),
           serviceId: service.id,
           serviceName: service.name,
+          callerName,
           state: 'waiting',
           priority,
           createdAt: Date.now(),
@@ -348,8 +381,9 @@
         lastIssued = ticket;
         setText('ticket-number', ticket.number);
         const ahead = waitingTicketsForService(service.id).filter(item => item.createdAt < ticket.createdAt || (item.priority && !ticket.priority)).length;
-        setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
+        setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''}${callerName ? ` · Chamada por: ${callerName}` : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
         document.getElementById('ticket-result').hidden = false;
+        photoReminder.hidden = false;
         saveData();
         return;
       }

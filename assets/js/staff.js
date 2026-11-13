@@ -50,7 +50,8 @@
     const serviceNames = (profile.service_names?.length ? profile.service_names : [profile.service_name]).filter(Boolean).join(', ');
     setText('staff-name', profile.full_name);
     setText('staff-assignment', `${serviceNames} · ${profile.counter_name}`);
-    setText('current-ticket', active?.number || '---');
+    setText('current-ticket', active?.caller_name || active?.number || '---');
+    element('current-ticket').classList.toggle('caller-name-display', Boolean(active?.caller_name));
     setText('current-service', active?.service_name || 'Não há atendimento em curso.');
     setText('current-status', active ? (active.state === 'serving' ? 'Atendimento em curso.' : 'Aguarda início do atendimento.') : '');
     setText('queue-count', `${waiting} ${waiting === 1 ? 'senha em espera' : 'senhas em espera'} em ${serviceNames}`);
@@ -73,7 +74,7 @@
         const row = document.createElement('div');
         row.className = 'recent-row';
         const number = document.createElement('strong');
-        number.textContent = ticket.number;
+        number.textContent = ticket.caller_name || ticket.number;
         const label = document.createElement('span');
         label.textContent = `${ticket.service_name} · ${ticket.state === 'done' ? 'Concluída' : ticket.counter_name || profile.counter_name}`;
         row.append(number, label);
@@ -91,7 +92,7 @@
     for (const ticket of orderedTickets) {
       const row = document.createElement('tr');
       const values = [
-        ticket.number,
+        ticket.caller_name ? `${ticket.caller_name} (${ticket.number})` : ticket.number,
         `${ticket.service_name || 'Serviço'}${ticket.priority ? ' · Prioridade' : ''}`,
         ({ waiting: 'Em espera', called: 'Chamada', serving: 'Em atendimento', done: 'Concluída', absent: 'Ausente' })[ticket.state] || ticket.state,
         new Date(ticket.created_at).toLocaleString('pt-PT', { dateStyle: 'short', timeStyle: 'short' }),
@@ -156,11 +157,11 @@
     try {
       const query = new URLSearchParams({
         ...queryOptions,
-        select: 'id,number,service_id,counter_id,state,created_at,called_at,priority,services(name),counters(name)'
+        select: 'id,number,caller_name,service_id,counter_id,state,created_at,called_at,priority,services(name),counters(name)'
       });
       result = await request(`/rest/v1/tickets?${query}`);
     } catch (error) {
-      if (!/priority|column.*does not exist|does not exist/i.test(error.message || '')) {
+      if (!/priority|caller_name|column.*does not exist|does not exist/i.test(error.message || '')) {
         throw error;
       }
       const query = new URLSearchParams({
@@ -188,17 +189,17 @@
       return;
     }
     setText('action-message', action === 'call-ticket' && selectedTicket
-      ? `A chamar senha ${selectedTicket.number}…`
+      ? `A chamar ${selectedTicket.caller_name || `senha ${selectedTicket.number}`}…`
       : 'A atualizar atendimento…');
     try {
       if (action === 'call') {
         const result = await rpc('call_next_ticket');
         const ticket = Array.isArray(result) ? result[0] : result;
-        setText('action-message', ticket ? `Senha ${ticket.number} chamada.` : 'Não há senhas em espera neste serviço.');
+        setText('action-message', ticket ? `${ticket.caller_name || `Senha ${ticket.number}`} chamada.` : 'Não há senhas em espera neste serviço.');
       } else if (action === 'call-ticket') {
         if (!selectedTicket) return;
         await rpc('call_ticket', { p_ticket_id: selectedTicket.id });
-        setText('action-message', `Senha ${selectedTicket.number} chamada.`);
+        setText('action-message', `${selectedTicket.caller_name || `Senha ${selectedTicket.number}`} chamada.`);
       } else {
         if (!active) return;
         const actionName = action === 'start' ? 'start' : action === 'finish' ? 'done' : 'absent';
