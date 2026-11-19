@@ -457,3 +457,21 @@ h1 span { color: var(--teal); font-style: italic; }
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   }
 }
+
+@media (min-width: 461px) and (max-width: 760px) {
+  #view-emit .service-grid-dense,
+  #view-emit .service-grid-compact {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  #view-emit .service-card {
+    height: 68px !important;
+    min-height: 68px !important;
+    padding: 7px 9px !important;
+    gap: 2px;
+  }
+
+  #view-emit .service-card strong { font-size: 14px; }
+  #view-emit .service-card span { display: none; }
+  #view-emit .service-card small { margin-top: 3px; font-size: 11px; }
+}
