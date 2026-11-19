@@ -268,7 +268,16 @@
         list.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
       }
 
-      const cardHeight = dense ? '92px' : compact ? '112px' : '142px';
+      const height = window.innerHeight;
+      let cardHeight;
+
+      if (height <= 700) {
+        cardHeight = dense ? '74px' : compact ? '86px' : '104px';
+      } else if (height <= 850) {
+        cardHeight = dense ? '82px' : compact ? '96px' : '118px';
+      } else {
+        cardHeight = dense ? '92px' : compact ? '112px' : '142px';
+      }
       for (const card of list.querySelectorAll('.service-card')) {
         card.style.minHeight = cardHeight;
         card.style.padding = dense ? '11px' : compact ? '14px' : '20px';
