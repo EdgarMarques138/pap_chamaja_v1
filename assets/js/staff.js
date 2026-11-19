@@ -7,6 +7,7 @@
   let tokenRefreshPromise = null;
   let profile = null;
   let tickets = [];
+  let counters = [];
   let refreshTimer = null;
 
   const element = id => document.getElementById(id);
@@ -103,6 +104,20 @@
     element('finish-service').disabled = !active || active.state !== 'serving';
     element('mark-absent').disabled = !active;
 
+    const transferSelect = element('transfer-counter');
+    const previousCounter = transferSelect.value;
+    transferSelect.replaceChildren();
+    for (const counter of counters.filter(item => item.id !== profile.counter_id)) {
+      const option = document.createElement('option');
+      option.value = counter.id;
+      option.textContent = counter.name;
+      transferSelect.append(option);
+    }
+    if (previousCounter && [...transferSelect.options].some(option => option.value === previousCounter)) {
+      transferSelect.value = previousCounter;
+    }
+    element('transfer-ticket').disabled = !active || !transferSelect.options.length;
+
     const list = element('recent-tickets');
     list.replaceChildren();
     const recent = tickets.filter(ticket => ticket.called_at).slice(0, 5);
@@ -173,6 +188,12 @@
   async function refreshQueue() {
     if (!profile) return;
     try {
+      counters = await request('/rest/v1/counters?select=id,name,active&active=eq.true&order=name.asc');
+    } catch (error) {
+      counters = [];
+      if (!/counters|does not exist|not found/i.test(error.message || '')) throw error;
+    }
+    try {
       const links = await request(`/rest/v1/counter_services?select=service_id,services(name)&counter_id=eq.${encodeURIComponent(profile.counter_id)}`);
       profile.service_ids = [...new Set([profile.service_id, ...links.map(link => link.service_id)].filter(Boolean))];
       const linkedNames = links.map(link => Array.isArray(link.services) ? link.services[0]?.name : link.services?.name);
@@ -242,6 +263,16 @@
         if (!selectedTicket) return;
         await rpc('call_ticket', { p_ticket_id: selectedTicket.id });
         setText('action-message', `${selectedTicket.caller_name || `Senha ${selectedTicket.number}`} chamada.`);
+      } else if (action === 'transfer') {
+        if (!active) return;
+        const targetCounterId = element('transfer-counter').value;
+        if (!targetCounterId) throw new Error('Seleciona o balcão de destino.');
+        const result = await rpc('transfer_ticket', {
+          p_ticket_id: active.id,
+          p_target_counter_id: targetCounterId
+        });
+        const ticket = Array.isArray(result) ? result[0] : result;
+        setText('action-message', `Senha ${ticket?.number || active.number} reencaminhada para a próxima chamada no balcão selecionado.`);
       } else {
         if (!active) return;
         const actionName = action === 'start' ? 'start' : action === 'finish' ? 'done' : 'absent';
@@ -354,6 +385,7 @@
   element('start-service').addEventListener('click', () => performAction('start'));
   element('finish-service').addEventListener('click', () => performAction('finish'));
   element('mark-absent').addEventListener('click', () => performAction('absent'));
+  element('transfer-ticket').addEventListener('click', () => performAction('transfer'));
 
   if (!backendUrl || !backendKey) {
     element('login-submit').disabled = true;

@@ -518,3 +518,11 @@ body.emit-view-active #view-emit .service-card {
 }
 body.emit-view-active #view-emit .service-card span { display: none; }
 body.emit-view-active #view-emit .service-card small { margin-top: 2px; font-size: 11px; }
+.transfer-ticket-field { flex-basis: 100%; display: grid; grid-template-columns: minmax(180px, 1fr) auto; gap: 8px 10px; align-items: center; margin-top: 4px; }
+.transfer-ticket-field label { grid-column: 1 / -1; font-size: 14px; font-weight: 700; }
+.transfer-ticket-field select { min-height: 46px; padding: 0 12px; border: 1px solid #9eb4b1; border-radius: 6px; background: white; color: var(--ink); font: inherit; }
+.transfer-ticket-field .button { min-height: 46px; }
+@media (max-width: 760px) {
+  .transfer-ticket-field { grid-template-columns: 1fr; }
+  .transfer-ticket-field .button { width: 100%; }
+}
