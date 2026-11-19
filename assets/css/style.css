@@ -111,11 +111,10 @@ h1 span { color: var(--teal); font-style: italic; }
 .portal-title { margin-bottom: 14px; font-size: 42px; }
 .section-heading > p:last-child { color: var(--muted); }
 .service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.service-card { min-height: 142px; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: white; text-align: left; cursor: pointer; }
-.service-card:hover { border-color: var(--teal); box-shadow: 0 8px 24px rgba(23, 50, 56, .07); }
-.service-card strong { font-size: 19px; }
-.service-card span { color: var(--muted); }
-.service-card small { margin-top: auto; color: var(--teal-dark); font-weight: 700; }
+.service-card { min-height: 142px; padding: 20px; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; border: 1px solid #d3ded8; border-bottom: 4px solid #b9c9c1; border-radius: 9px; color: var(--ink); background: linear-gradient(145deg, #ffffff 0%, #f8fbf9 100%); text-align: left; cursor: pointer; box-shadow: 0 4px 0 #b9c9c1, 0 10px 18px rgba(35, 67, 60, .09); transform: translateY(0); transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background 180ms ease; }
+.service-card:hover { border-color: #a7c8bc; border-bottom-color: #7fae9d; background: linear-gradient(145deg, #ffffff 0%, #eef7f3 100%); box-shadow: 0 7px 0 #98b5a8, 0 14px 24px rgba(35, 67, 60, .15); transform: translateY(-3px); }
+.service-card:focus-visible { border-color: var(--teal); outline: 3px solid rgba(18, 110, 100, .18); outline-offset: 3px; }
+.service-card:active { border-bottom-width: 1px; box-shadow: 0 1px 0 #98b5a8, 0 5px 10px rgba(35, 67, 60, .12); transform: translateY(3px); }
 .ticket-result { max-width: 520px; margin: 28px auto 0; padding: 26px; border: 1px solid #c5ddd3; border-radius: 8px; background: #edf7f1; text-align: center; }
 .ticket-result strong { display: block; margin: 4px 0; color: var(--teal-dark); font-size: 56px; }
 .ticket-result p:not(.eyebrow) { color: var(--muted); }
@@ -399,3 +398,7 @@ h1 span { color: var(--teal); font-style: italic; }
   .service-grid.service-grid-compact,
   .service-grid.service-grid-dense { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.service-card strong { font-size: 19px; }
+.service-card span { color: var(--muted); }
+.service-card small { margin-top: auto; color: var(--teal-dark); font-weight: 700; }
