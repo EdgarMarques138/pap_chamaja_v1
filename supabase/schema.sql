@@ -586,6 +586,14 @@ begin
     raise exception 'O balcão de destino não atende esta área.' using errcode = 'P0001';
   end if;
 
+  if exists (
+    select 1 from public.tickets
+    where counter_id = v_target_counter.id
+      and state in ('called', 'serving')
+  ) then
+    raise exception 'O balcão de destino já tem uma senha em atendimento.' using errcode = 'P0001';
+  end if;
+
   update public.tickets set
     state = 'waiting',
     called_at = null,
@@ -609,12 +617,13 @@ revoke all on function public.call_ticket(uuid) from public, anon;
 revoke all on function public.advance_ticket(uuid, text) from public, anon;
 revoke all on function public.admin_reset_tickets() from public, anon;
 revoke all on function public.transfer_ticket(uuid, uuid) from public, anon;
-grant execute on function public.is_active_staff() to authenticated;
-grant execute on function public.is_admin() to anon, authenticated;
+grant execute on function public.admin_delete_employee(uuid) to authenticated;
 grant execute on function public.emit_ticket(uuid, boolean, text) to anon, authenticated;
 grant execute on function public.call_next_ticket(), public.advance_ticket(uuid, text) to authenticated;
 grant execute on function public.call_ticket(uuid) to authenticated;
 grant execute on function public.admin_reset_tickets() to authenticated;
 grant execute on function public.transfer_ticket(uuid, uuid) to authenticated;
+grant execute on function public.is_active_staff() to authenticated;
+grant execute on function public.is_admin() to anon, authenticated;
 
 notify pgrst, 'reload schema';
