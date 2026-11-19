@@ -234,6 +234,8 @@
     function renderServices() {
       const list = document.getElementById('service-list');
       list.replaceChildren();
+      list.classList.toggle('service-grid-compact', services.length >= 5);
+      list.classList.toggle('service-grid-dense', services.length >= 9);
       for (const service of services) {
         const waiting = waitingTicketsForService(service.id).length;
         const button = document.createElement('button');

@@ -3,6 +3,8 @@
   const backendUrl = String(config.supabaseUrl || '').replace(/\/$/, '');
   const backendKey = String(config.supabaseAnonKey || '');
   let accessToken = '';
+  let refreshToken = '';
+  let tokenRefreshPromise = null;
   let profile = null;
   let tickets = [];
   let refreshTimer = null;
@@ -18,12 +20,52 @@
     };
   }
 
-  async function request(path, options = {}) {
+  function requireLogin() {
+    accessToken = '';
+    refreshToken = '';
+    profile = null;
+    tickets = [];
+    showLogin();
+    setText('login-message', 'A sessão expirou. Inicia sessão novamente.');
+  }
+
+  async function refreshSession() {
+    if (!refreshToken) {
+      requireLogin();
+      throw new Error('A sessão expirou. Inicia sessão novamente.');
+    }
+    if (tokenRefreshPromise) return tokenRefreshPromise;
+
+    tokenRefreshPromise = (async () => {
+      const response = await fetch(`${backendUrl}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST',
+        headers: { apikey: backendKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken })
+      });
+      const auth = await response.json();
+      if (!response.ok || !auth.access_token || !auth.refresh_token) {
+        requireLogin();
+        throw new Error(auth.msg || auth.message || 'A sessão expirou. Inicia sessão novamente.');
+      }
+      accessToken = auth.access_token;
+      refreshToken = auth.refresh_token;
+      return accessToken;
+    })().finally(() => {
+      tokenRefreshPromise = null;
+    });
+    return tokenRefreshPromise;
+  }
+
+  async function request(path, options = {}, retried = false) {
     const response = await fetch(`${backendUrl}${path}`, {
       method: options.method || 'GET',
       headers: { ...headers(options.token), ...(options.headers || {}) },
       body: options.body === undefined ? undefined : JSON.stringify(options.body)
     });
+    if (response.status === 401 && accessToken && !retried && !path.startsWith('/auth/v1/')) {
+      await refreshSession();
+      return request(path, options, true);
+    }
     const text = await response.text();
     let result = null;
     try { result = text ? JSON.parse(text) : null; } catch { result = text; }
@@ -244,6 +286,7 @@
       const auth = await authResponse.json();
       if (!authResponse.ok) throw new Error(auth.msg || auth.message || 'Email ou palavra-passe inválidos.');
       accessToken = auth.access_token;
+      refreshToken = auth.refresh_token || '';
       const query = new URLSearchParams({
         select: 'id,full_name,role,service_id,counter_id,active,counters(name,service_id,services(name))',
         id: `eq.${auth.user.id}`,
@@ -290,6 +333,7 @@
       refreshTimer = window.setInterval(() => refreshQueue().catch(error => setText('action-message', error.message)), 5000);
     } catch (error) {
       accessToken = '';
+      refreshToken = '';
       profile = null;
       setText('login-message', error.message);
     } finally {
@@ -300,6 +344,7 @@
   element('logout').addEventListener('click', async () => {
     try { await request('/auth/v1/logout', { method: 'POST' }); } catch { }
     accessToken = '';
+    refreshToken = '';
     profile = null;
     tickets = [];
     showLogin();

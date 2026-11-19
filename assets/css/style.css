@@ -365,6 +365,8 @@ h1 span { color: var(--teal); font-style: italic; }
 
 @media (max-width: 460px) {
   .service-grid { grid-template-columns: 1fr; }
+  .service-grid.service-grid-compact,
+  .service-grid.service-grid-dense { grid-template-columns: 1fr; }
   .home-actions .button { flex: 1 1 100%; }
   .section-heading h2 { font-size: 29px; }
   .panel-current { min-height: 270px; }
@@ -380,4 +382,20 @@ h1 span { color: var(--teal); font-style: italic; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+
+.service-grid.service-grid-compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.service-grid.service-grid-dense { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.service-grid.service-grid-compact .service-card { min-height: 112px; padding: 14px; gap: 5px; }
+.service-grid.service-grid-dense .service-card { min-height: 92px; padding: 11px; gap: 4px; }
+.service-grid.service-grid-compact .service-card strong { font-size: 16px; }
+.service-grid.service-grid-dense .service-card strong { font-size: 15px; }
+.service-grid.service-grid-compact .service-card span,
+.service-grid.service-grid-dense .service-card span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.service-grid.service-grid-compact .service-card small,
+.service-grid.service-grid-dense .service-card small { font-size: 12px; }
+
+@media (max-width: 760px) {
+  .service-grid.service-grid-compact,
+  .service-grid.service-grid-dense { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
