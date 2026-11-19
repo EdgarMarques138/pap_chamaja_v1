@@ -257,9 +257,9 @@
       list.classList.toggle('service-grid-dense', dense);
 
       if (width <= 460) {
-        list.style.gridTemplateColumns = '1fr';
-      } else if (width <= 760) {
         list.style.gridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+      } else if (width <= 760) {
+        list.style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
       } else if (dense) {
         list.style.gridTemplateColumns = 'repeat(4, minmax(0, 1fr))';
       } else if (compact) {
@@ -272,11 +272,11 @@
       let cardHeight;
 
       if (height <= 700) {
-        cardHeight = dense ? '74px' : compact ? '86px' : '104px';
+        cardHeight = '58px';
       } else if (height <= 850) {
-        cardHeight = dense ? '82px' : compact ? '96px' : '118px';
+        cardHeight = dense ? '68px' : compact ? '74px' : '92px';
       } else {
-        cardHeight = dense ? '92px' : compact ? '112px' : '142px';
+        cardHeight = dense ? '78px' : compact ? '92px' : '112px';
       }
       for (const card of list.querySelectorAll('.service-card')) {
         card.style.minHeight = cardHeight;
@@ -327,6 +327,7 @@
     }
 
     function showView(name) {
+      document.body.classList.toggle('emit-view-active', name === 'emit');
       for (const view of document.querySelectorAll('.view')) {
         view.hidden = view.id !== `view-${name}`;
       }
