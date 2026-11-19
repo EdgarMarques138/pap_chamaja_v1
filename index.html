@@ -57,11 +57,6 @@
         <input id="priority-ticket" type="checkbox">
         <span>Atendimento prioritário</span>
       </label>
-      <div class="caller-name-field">
-        <label for="caller-name">Nome para chamada (opcional)</label>
-        <input id="caller-name" type="text" maxlength="80" autocomplete="name" placeholder="Deixa em branco para ser chamado pelo número">
-        <small>Se preencheres, o nome ficará visível no painel durante a chamada.</small>
-      </div>
       <div class="service-grid" id="service-list"></div>
       <div class="ticket-result" id="ticket-result" aria-live="polite" hidden>
         <p class="eyebrow">Senha emitida</p>
@@ -348,7 +343,7 @@
         const service = services.find(item => item.id === serviceButton.dataset.service);
         if (!service) return;
         const priority = document.getElementById('priority-ticket').checked;
-        const callerName = document.getElementById('caller-name').value.trim().slice(0, 80);
+        const callerName = '';
         const photoReminder = document.getElementById('ticket-photo-reminder');
         photoReminder.hidden = true;
         if (backendEnabled) {
@@ -358,29 +353,18 @@
             try {
               result = await backendRpc('emit_ticket', {
                 p_service_id: service.id,
-                p_priority: priority,
-                p_caller_name: callerName || null
+                p_priority: priority
               });
             } catch (error) {
-              if (!/p_caller_name|p_priority|priority|function.*emit_ticket|does not exist/i.test(error.message || '')) {
+              if (!/p_priority|priority|function.*emit_ticket|does not exist/i.test(error.message || '')) {
                 throw error;
               }
-              if (callerName) {
-                throw new Error('A chamada pelo nome ainda não está ativada na base de dados. Executa supabase/add_ticket_caller_name.sql no SQL Editor do Supabase.');
-              }
-              try {
-                result = await backendRpc('emit_ticket', { p_service_id: service.id, p_priority: priority });
-              } catch (fallbackError) {
-                if (!/p_priority|priority|function.*emit_ticket|does not exist/i.test(fallbackError.message || '')) {
-                  throw fallbackError;
-                }
-                result = await backendRpc('emit_ticket', { p_service_id: service.id });
-              }
+              result = await backendRpc('emit_ticket', { p_service_id: service.id });
             }
             const remoteTicket = Array.isArray(result) ? result[0] : result;
             lastIssued = mapRemoteTicket(remoteTicket);
             setText('ticket-number', lastIssued.number);
-            setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''}${callerName ? ` · Chamada por: ${callerName}` : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
+            setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
             document.getElementById('ticket-result').hidden = false;
             photoReminder.hidden = false;
             await refreshRemoteData();
@@ -398,7 +382,6 @@
           number: service.prefix + String(previous + 1).padStart(3, '0'),
           serviceId: service.id,
           serviceName: service.name,
-          callerName,
           state: 'waiting',
           priority,
           createdAt: Date.now(),
@@ -410,7 +393,7 @@
         lastIssued = ticket;
         setText('ticket-number', ticket.number);
         const ahead = waitingTicketsForService(service.id).filter(item => item.createdAt < ticket.createdAt || (item.priority && !ticket.priority)).length;
-        setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''}${callerName ? ` · Chamada por: ${callerName}` : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
+        setText('ticket-detail', `${service.name}${priority ? ' · Prioridade' : ''} · ${ahead} ${ahead === 1 ? 'pessoa à sua frente' : 'pessoas à sua frente'}.`);
         document.getElementById('ticket-result').hidden = false;
         photoReminder.hidden = false;
         saveData();
